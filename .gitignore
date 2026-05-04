@@ -3,8 +3,9 @@
 Thumbs.db
 
 # Editor settings
-.vscode/
-.idea/
+**/.vscode/*
+!**/.vscode/extensions.json
+**/.idea/
 
 # Logs
 *.log
@@ -12,11 +13,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
 # Java / Maven / Gradle
 **/target/
+!**/src/main/**/target/
+!**/src/test/**/target/
 **/build/
 **/.mvn/wrapper/maven-wrapper.jar
+**/HELP.md
 
 # Node / Frontend
 **/node_modules/
@@ -28,6 +33,6 @@ pnpm-debug.log*
 **/coverage/
 
 # Environment files
-.env
-.env.*
+**/.env
+**/.env.*
 !.env.example
