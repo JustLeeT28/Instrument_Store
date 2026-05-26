@@ -35,21 +35,21 @@ export const CartPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-7xl mx-auto px-16 pt-32 pb-20">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 pt-24 md:pt-32 pb-16 md:pb-20">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Giỏ hàng của bạn</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Giỏ hàng của bạn</h1>
           <p className="text-base text-slate-600">
             Kiểm tra lại những nhạc cụ được chế tác bậc thầy mà bạn đã chọn trước khi thanh toán.
           </p>
         </div>
 
-        <div className="grid grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Cart Items */}
-          <section className="col-span-8 space-y-4">
+          <section className="lg:col-span-8 space-y-4">
             {cartItems.map((item) => (
-              <div key={item.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex shadow-sm group">
-                <div className="w-64 h-64 bg-slate-100 flex items-center justify-center overflow-hidden">
+              <div key={item.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col md:flex-row shadow-sm group">
+                <div className="w-full md:w-64 h-56 md:h-64 bg-slate-100 flex items-center justify-center overflow-hidden">
                   <img
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -57,17 +57,17 @@ export const CartPage = () => {
                   />
                 </div>
 
-                <div className="flex-1 p-8 flex flex-col justify-between">
-                  <div className="flex justify-between items-start">
+                <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900 mb-1">{item.name}</h3>
-                      <p className="text-sm text-slate-600 line-clamp-2 max-w-md">{item.description}</p>
+                      <p className="text-sm text-slate-600 line-clamp-2 md:max-w-md">{item.description}</p>
                     </div>
                     <span className="text-lg font-bold text-amber-600">${item.price.toLocaleString()}</span>
                   </div>
 
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="flex items-center space-x-4 border border-slate-300 rounded-full px-4 py-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+                    <div className="flex items-center space-x-4 border border-slate-300 rounded-full px-4 py-2 w-fit">
                       <button className="text-slate-500 hover:text-slate-900 transition-colors">
                         <span className="material-symbols-outlined text-sm">remove</span>
                       </button>
@@ -95,7 +95,7 @@ export const CartPage = () => {
           </section>
 
           {/* Order Summary */}
-          <aside className="col-span-4 sticky top-32">
+          <aside className="lg:col-span-4 lg:sticky lg:top-32">
             <div className="bg-white border border-slate-200 rounded-lg p-10 shadow-lg">
               <h2 className="text-xl font-semibold text-slate-900 mb-8 pb-4 border-b border-slate-100">
                 Tóm tắt đơn hàng

@@ -1,14 +1,13 @@
 export const Footer = () => {
   return (
     <footer className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-noto-serif text-sm tracking-wide w-full mt-24 border-t border-slate-200 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-16 py-20 grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 py-10 md:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
         <div className="col-span-1 md:col-span-1">
           <span className="text-xl font-semibold text-slate-900 dark:text-slate-50 block mb-6 uppercase tracking-widest">
-            Luthier & Co.
+            Melody House
           </span>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-            Gìn giữ linh hồn của âm thanh thông qua nghệ thuật thủ công và chất lượng không khoan nhượng kể từ năm 1924.
-          </p>
+            Đánh thức linh hồn âm thanh bằng công nghệ hiện đại và nghệ thuật chế tác thủ công bằng tình yêu và sự tần tụy </p>
           <div className="flex gap-4">
             <span className="material-symbols-outlined text-xl text-slate-400 hover:text-amber-600 cursor-pointer transition-colors">
               share

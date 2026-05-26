@@ -68,21 +68,21 @@ export const ProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-screen-2xl mx-auto px-16 py-20">
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 py-12 md:py-20">
         {/* Hero Section */}
         <header className="mb-12 max-w-3xl">
-          <h1 className="text-5xl font-bold text-slate-900 mb-4">Đàn Guitar Acoustic</h1>
-          <p className="text-lg text-slate-700 leading-relaxed">
+          <h1 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">Đàn Guitar Acoustic</h1>
+          <p className="text-base md:text-lg text-slate-700 leading-relaxed">
             Từ độ trầm ấm vang dội của gỗ Sitka Spruce lâu năm đến những nốt cao trong trẻo của gỗ Koa thượng hạng,
             bộ sưu tập của chúng tôi đại diện cho đỉnh cao của nghệ thuật chế tác đàn. Mỗi nhạc cụ đều được tuyển
             chọn thủ công vì âm thanh độc bản, kết cấu vững chãi và linh hồn mà nó mang lại.
           </p>
         </header>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
-          <aside className="w-72 flex-shrink-0">
-            <div className="sticky top-32 space-y-8">
+          <aside className="w-full lg:w-72 flex-shrink-0">
+            <div className="space-y-8 lg:sticky lg:top-32">
               {/* Brand Filter */}
               <div>
                 <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Thương hiệu</h3>
@@ -176,7 +176,7 @@ export const ProductsPage = () => {
           {/* Product Grid */}
           <section className="flex-1">
             {/* Sort Bar */}
-            <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-slate-200 pb-4">
               <span className="text-sm text-slate-600">Hiển thị {products.length} trong số 142 Đàn Guitar</span>
               <div className="flex items-center gap-4">
                 <label className="text-sm text-slate-600 font-semibold">Sắp xếp theo:</label>
@@ -190,7 +190,7 @@ export const ProductsPage = () => {
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

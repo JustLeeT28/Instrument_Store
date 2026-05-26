@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 export const Header = () => {
   return (
     <header className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-md text-slate-900 dark:text-slate-50 sticky top-0 z-50 border-b border-slate-100 dark:border-slate-900 shadow-[0_4px_20px_-5px_rgba(15,23,42,0.08)]">
-      <div className="max-w-screen-2xl mx-auto px-16 h-24 flex items-center justify-between">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 h-20 md:h-24 flex items-center justify-between">
         <Link to="/" className="text-2xl font-bold tracking-widest text-slate-900 dark:text-slate-50 uppercase font-noto-serif">
-          Luthier & Co.
+          Melody House
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">

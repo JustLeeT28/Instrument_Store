@@ -60,9 +60,9 @@ export const ProductDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-screen-2xl mx-auto px-16 py-20">
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 py-12 md:py-20">
         {/* Breadcrumbs */}
-        <nav className="mb-8 flex items-center space-x-2 text-slate-600 font-sm">
+        <nav className="mb-8 flex flex-wrap items-center gap-2 text-slate-600 font-sm">
           <a href="#" className="hover:text-slate-900">
             Cửa hàng
           </a>
@@ -74,10 +74,10 @@ export const ProductDetailPage = () => {
           <span className="text-slate-900">{product.name}</span>
         </nav>
 
-        <div className="grid grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Product Gallery */}
-          <div className="col-span-7">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="lg:col-span-7">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2 aspect-[4/5] bg-slate-100 rounded-lg overflow-hidden group">
                 <img
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -94,7 +94,7 @@ export const ProductDetailPage = () => {
           </div>
 
           {/* Product Info */}
-          <div className="col-span-5 flex flex-col space-y-8 sticky top-32 h-fit">
+          <div className="lg:col-span-5 flex flex-col space-y-8 lg:sticky lg:top-32 h-fit">
             <div className="space-y-4">
               <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold">
                 {product.badge}
@@ -123,8 +123,8 @@ export const ProductDetailPage = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="flex gap-4">
-                <button className="flex-grow bg-slate-900 text-white font-semibold py-5 rounded-lg active:scale-[0.98] transition-all hover:bg-slate-800 shadow-lg flex items-center justify-center gap-2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button className="flex-grow bg-slate-900 text-white font-semibold py-4 md:py-5 rounded-lg active:scale-[0.98] transition-all hover:bg-slate-800 shadow-lg flex items-center justify-center gap-2">
                   <span className="material-symbols-outlined">shopping_bag</span>
                   <span>Thêm vào giỏ hàng</span>
                 </button>
@@ -144,9 +144,9 @@ export const ProductDetailPage = () => {
               </div>
               <div className="divide-y divide-slate-200">
                 {Object.entries(product.specs).map(([key, value], idx) => (
-                  <div key={idx} className={`grid grid-cols-3 px-6 py-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                  <div key={idx} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 px-6 py-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                     <span className="text-xs text-slate-600 font-semibold">{key}</span>
-                    <span className="col-span-2 text-sm text-slate-900">{value}</span>
+                    <span className="sm:col-span-2 text-sm text-slate-900">{value}</span>
                   </div>
                 ))}
               </div>
@@ -155,7 +155,7 @@ export const ProductDetailPage = () => {
         </div>
 
         {/* Audio Sample */}
-        <section className="mt-20 p-12 bg-slate-900 text-white rounded-3xl overflow-hidden relative">
+        <section className="mt-16 md:mt-20 p-6 md:p-12 bg-slate-900 text-white rounded-3xl overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-r from-amber-600/20 to-transparent pointer-events-none"></div>
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-2">
@@ -182,10 +182,10 @@ export const ProductDetailPage = () => {
         </section>
 
         {/* Customer Reviews */}
-        <section className="mt-20">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-12 gap-8">
+        <section className="mt-16 md:mt-20">
+          <div className="flex flex-col md:flex-row justify-between items-start mb-10 md:mb-12 gap-8">
             <div className="max-w-md">
-              <h2 className="text-3xl font-bold text-slate-900 mb-6">Đánh giá từ khách hàng</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">Đánh giá từ khách hàng</h2>
               <div className="flex items-center gap-6">
                 <div className="text-center">
                   <div className="text-6xl font-bold text-slate-900">{product.rating}</div>
@@ -209,7 +209,7 @@ export const ProductDetailPage = () => {
           </div>
 
           {/* Review Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {product.reviews.map((review) => (
               <div key={review.id} className="bg-white p-8 rounded-2xl shadow-md border border-slate-100 flex flex-col justify-between h-full">
                 <div className="space-y-4">

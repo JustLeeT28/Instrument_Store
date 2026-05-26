@@ -37,9 +37,9 @@ export const HomePage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+  <div className="min-h-screen bg-white w-full md:max-w-[80vw] md:mx-auto">
       {/* Hero Section */}
-      <section className="relative min-h-[921px] flex items-center overflow-hidden">
+      <section className="relative min-h-[620px] md:min-h-[921px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             alt="A masterfully crafted acoustic guitar in a high-end woodshop"
@@ -49,22 +49,22 @@ export const HomePage = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
         </div>
 
-        <div className="container mx-auto px-16 relative z-10">
-          <div className="max-w-2xl space-y-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-16 relative z-10">
+          <div className="max-w-2xl space-y-6 md:space-y-8">
             <span className="text-xs font-bold text-amber-600 uppercase tracking-[0.3em]">CÂU CHUYỆN CỦA CHÚNG TÔI</span>
-            <h1 className="text-6xl font-bold text-slate-900 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight">
               Linh hồn của một <br />
               <span className="italic text-amber-700">Kiệt tác</span>.
             </h1>
-            <p className="text-lg text-slate-700 max-w-lg leading-relaxed">
+            <p className="text-base md:text-lg text-slate-700 max-w-lg leading-relaxed">
               Từ năm 1924, Luthier & Co. đã đứng tại điểm giao thoa giữa nghề mộc truyền thống và khoa học âm học hiện đại.
               Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ—nó là một thực thể sống hoàn thiện dần theo thời gian.
             </p>
-            <div className="flex items-center gap-6 pt-4">
-              <button className="px-10 py-5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800 transition-colors active:scale-[0.98]">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 pt-2 md:pt-4">
+              <button className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800 transition-colors active:scale-[0.98]">
                 Khám phá Bộ sưu tập
               </button>
-              <button className="px-10 py-5 border-2 border-slate-900 text-slate-900 font-semibold rounded hover:bg-slate-900 hover:text-white transition-colors active:scale-[0.98]">
+              <button className="px-8 md:px-10 py-4 md:py-5 border-2 border-slate-900 text-slate-900 font-semibold rounded hover:bg-slate-900 hover:text-white transition-colors active:scale-[0.98]">
                 Xưởng chế tác
               </button>
             </div>
@@ -72,64 +72,14 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Collections Bento Grid */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-16">
-          <div className="mb-12 text-center">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">Bộ sưu tập Tuyển chọn</h2>
-            <div className="w-24 h-1 bg-amber-600 mx-auto"></div>
-          </div>
-
-          <div className="grid grid-cols-12 gap-8 h-[700px]">
-            <div className="col-span-8 relative group overflow-hidden cursor-pointer">
-              <img
-                alt="Premium acoustic guitars"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9KmqWxy-YiXsa9y-RItQ6VkH5rwCwXVVRbq51rHFV0NayNlsOz3ZFA4mY4UcPJWksFqRz94VV85v5x2mgPxLN590jUUu_1pAYF4TwIH6Eaws_0ieCbhVKlU5EDd5xpb_Y0w2Uy-kUJB2duf4LRU2zQPLflRg90Gw7_rh6lp7Z-G02jkYbMLN52l9I3bGcehsNxH5ogI1BjLp2V-mW0XPYYvXU6d7qakV-4DPz0H3wo6Pw-71ZwTTXSZ7SuR0yR5bdpvych7Mdi6ea"
-              />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-              <div className="absolute bottom-10 left-10 text-white">
-                <span className="text-xs font-bold block mb-2">TÁC PHẨM KINH ĐIỂN</span>
-                <h3 className="text-2xl font-bold">Đàn Guitar Acoustic</h3>
-              </div>
-            </div>
-
-            <div className="col-span-4 grid grid-rows-2 gap-8">
-              <div className="relative group overflow-hidden cursor-pointer">
-                <img
-                  alt="Grand piano keyboard"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiO24Ytfzr0dGt1LDpojjd0ReB7UfcqqZY-Xb3PS4-2-qA-DR2_lXP8__HfFHvUVM3MKcO4XhBZXXqwcOnRkHLoqLIWdgGUDpvyNoVLPcBEZ6ne1fiG7tl_uS7f4Cz8aPKrYykY5-B2eOo1Xh9S7M5WEUKnL1kJ6yPRzYfmrdxleIhWdrmec8nFkJvtn3YchwWUQUeNKjlPWOWo1TpnP4aCwnRaYIPv5wJnuInpUK4x5Z68pOKBKvSZHFGTKjhi-hrLgMGRwzHU5tl"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors"></div>
-                <div className="absolute bottom-6 left-6 text-white">
-                  <h3 className="text-xl font-bold">Dàn nhạc</h3>
-                </div>
-              </div>
-
-              <div className="relative group overflow-hidden cursor-pointer">
-                <img
-                  alt="Modern studio recording equipment"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVcX_uMxJFb9IQE_bjKfOdERuP1YJABGIWE2r7d7rB1SIU-pg3Z_Mxb5eTSPSCPwK-jN0cx5fFdiGd57rVkKvkkqwG0QfjTW9rXe4oMC3itUzqL1zr4c2DDFhK9PcHHJurEZRwo2_vWmvZyEaZTNfJgpQ3A0u1xB0HoL0CzlFbAExWOHCkzTLrJZHAUaDabOeevgr4mxJOYPcGUfRqs1mq45E5cHv3YjMbV2ju0j8RyCTEj6mHaYSVNxlgVf3uTxc9r1bJmr5dLBIr"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors"></div>
-                <div className="absolute bottom-6 left-6 text-white">
-                  <h3 className="text-xl font-bold">Thiết bị Studio</h3>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Featured Instruments */}
-      <section className="py-20 bg-slate-50">
-        <div className="container mx-auto px-16">
-          <div className="flex justify-between items-end mb-12">
+      <section className="py-16 md:py-20 bg-slate-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-16">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-10 md:mb-12">
             <div>
               <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">DÀNH RIÊNG CHO BẠN</span>
-              <h2 className="text-4xl font-bold text-slate-900">Nhạc cụ Nổi bật</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Nhạc cụ Nổi bật</h2>
             </div>
             <Link
               to="/products"
@@ -139,7 +89,7 @@ export const HomePage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -148,16 +98,16 @@ export const HomePage = () => {
       </section>
 
       {/* Craftsmanship Story Section */}
-      <section className="py-20 overflow-hidden bg-white">
-        <div className="container mx-auto px-16">
-          <div className="grid grid-cols-2 gap-20 items-center">
+      <section className="py-16 md:py-20 overflow-hidden bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="relative">
               <img
                 alt="Master luthier crafting a guitar neck"
-                className="w-full h-[600px] object-cover shadow-2xl"
+                className="w-full h-[420px] md:h-[520px] lg:h-[600px] object-cover shadow-2xl"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPPOG9If11Yrv-2k2_fHnpa8uqp5l1KJHDrQqMLQsaAiVm2uxU0fa9PjmGtbquwQvS0QZ9zhqXOvn2rdJP1gFRCE2ApREk4kbRoMe2TEUW4VvC0cTZdcYcFZtpzrw0hzRCec7jKUcdwzGeA2yvnKq8tThwf98Z-cXdYHli-tqNLnLsEX4reZFJh2ayhB8L-JShIX5WmWTujgCzCM65P_t2mZSOYmXUVK6wUExq6AWtLoUHii6jaJDvtYQH6qhZGeOUuHrrAWiWpo9f"
               />
-              <div className="absolute -bottom-10 -right-10 bg-white p-12 max-w-xs border border-slate-200 shadow-lg">
+              <div className="absolute -bottom-6 md:-bottom-10 right-4 md:-right-10 bg-white p-6 md:p-12 max-w-xs border border-slate-200 shadow-lg">
                 <p className="text-2xl italic text-slate-900 leading-tight mb-4">
                   "Âm thanh không chỉ để nghe, mà còn để cảm nhận qua đôi tay của những người tạo hình nên nó."
                 </p>
@@ -165,13 +115,13 @@ export const HomePage = () => {
               </div>
             </div>
 
-            <div className="space-y-8 pl-12">
+            <div className="space-y-6 md:space-y-8 lg:pl-12">
               <span className="text-xs font-bold text-amber-600 uppercase tracking-[0.2em]">CÂU CHUYỆN CỦA CHÚNG TÔI</span>
-              <h2 className="text-5xl font-bold text-slate-900">
+              <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
                 Nghệ thuật của <br /> Nhạc cụ Tinh xảo
               </h2>
               <div className="w-16 h-1 bg-slate-900"></div>
-              <p className="text-lg text-slate-700 leading-relaxed">
+              <p className="text-base md:text-lg text-slate-700 leading-relaxed">
                 Từ năm 1924, Luthier & Co. đã đứng tại điểm giao thoa giữa nghề mộc truyền thống và khoa học âm học hiện đại.
                 Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ—nó là một thực thể sống hoàn thiện dần theo thời gian.
               </p>
@@ -190,15 +140,15 @@ export const HomePage = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-20 bg-slate-100 border-y border-slate-300">
-        <div className="container mx-auto px-16 text-center max-w-4xl">
+      <section className="py-16 md:py-20 bg-slate-100 border-y border-slate-300">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-16 text-center max-w-4xl">
           <span className="material-symbols-outlined text-4xl text-amber-600 mb-6 inline-block">auto_awesome</span>
-          <h2 className="text-4xl font-bold text-slate-900 mb-6">Tham gia Cộng đồng Người sành sỏi</h2>
-          <p className="text-lg text-slate-700 mb-8 leading-relaxed">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Tham gia Cộng đồng Người sành sỏi</h2>
+          <p className="text-base md:text-lg text-slate-700 mb-8 leading-relaxed">
             Nhận lời mời độc quyền tới các sự kiện trưng bày riêng tư, quyền tiếp cận sớm các phiên bản tùy chỉnh hiếm có
             và những kiến thức chuyên sâu từ các nghệ nhân bậc thầy của chúng tôi.
           </p>
-          <form className="flex max-w-2xl mx-auto gap-4">
+          <form className="flex flex-col sm:flex-row max-w-2xl mx-auto gap-4">
             <input
               type="email"
               placeholder="Địa chỉ email của bạn"
