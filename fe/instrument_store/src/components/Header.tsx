@@ -122,9 +122,9 @@ export const Header = () => {
             />
             <span className="material-symbols-outlined absolute right-3 top-2 text-slate-400 text-xl">search</span>
           </div>
-          <button className="hover:bg-slate-800 transition-all duration-300 p-2 rounded-full active:scale-[0.98]">
+          <Link to="/profile" className="hover:bg-slate-800 transition-all duration-300 p-2 rounded-full active:scale-[0.98]">
             <span className="material-symbols-outlined text-white">person</span>
-          </button>
+          </Link>
           <Link to="/cart" className="hover:bg-slate-800 transition-all duration-300 p-2 rounded-full active:scale-[0.98] relative">
             <span className="material-symbols-outlined text-white">shopping_cart</span>
             <span className="absolute top-1 right-1 w-2 h-2 bg-amber-600 rounded-full"></span>

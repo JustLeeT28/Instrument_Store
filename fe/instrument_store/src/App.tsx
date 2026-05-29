@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Header, Footer } from './components';
-import { HomePage, CartPage, ProductDetailPage, ProductsPage } from './pages';
+import { HomePage, CartPage, ProductDetailPage, ProductsPage, ProfilePage } from './pages';
 import './App.css';
 
 function App() {
@@ -14,6 +14,7 @@ function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </main>
         <Footer />
