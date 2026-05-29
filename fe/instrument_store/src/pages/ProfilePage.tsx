@@ -1,174 +1,146 @@
-import { Link } from 'react-router-dom';
-
 const mockUser = {
   fullName: 'Nguyễn Văn A',
   email: 'nguyenvana@example.com',
-  phone: '+84 123 456 789',
+  phone: '+84 901 234 567',
   role: 'customer',
   addresses: [
     {
-      line1: '123 Đường ABC',
-      line2: 'Căn hộ 45',
-      city: 'Hà Nội',
-      state: 'Quận Cầu Giấy',
+      line1: '123 Đường Lê Lợi',
+      line2: '',
+      city: 'Quận 1',
+      state: 'TP. Hồ Chí Minh',
       country: 'Việt Nam',
       label: 'Nhà riêng',
       default: true,
     },
-    {
-      line1: '456 Đường DEF',
-      line2: 'Tầng 3, Toà B',
-      city: 'Hồ Chí Minh',
-      state: 'Quận 1',
-      country: 'Việt Nam',
-      label: 'Văn phòng',
-      default: false,
-    },
-    {
-      line1: '789 Đường GHI',
-      line2: '',
-      city: 'Đà Nẵng',
-      state: 'Quận Hải Châu',
-      country: 'Việt Nam',
-      label: 'Cửa hàng',
-      default: false,
-    },
   ],
 };
 
+const recentOrders = [
+  {
+    id: '#LC-99201',
+    name: 'Acoustic Custom Series X1',
+    date: '12/05/2024',
+    price: '45.000.000₫',
+    status: 'Đã giao hàng',
+    statusColor: 'bg-green-50 text-green-700',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJvo2sGuScIqZKAzB-vqlxFtKPnj4og30xo3oSb9mj3lKXrvCLB96zyMfh84CVYyMLcCurVYnwS9dukq2Ox40vMEPcRTPG-EaV29raYjNb2hFzF86aMxaF3QWjV4NvFQPjJxTzwq2fzR6fyNSMTBmsym44OHWBRl6M0YPk3pRPLjyjBBnWUYVuMW10muW3tscy7oConX1LiQIRZfN7LnksJseE0jT_0tsaU-CxdBZTGVfCI_2NSGcp_4TUC3F5mAo03cJXHTCOc4pe',
+  },
+  {
+    id: '#LC-98150',
+    name: 'Bộ bảo dưỡng Piano cao cấp',
+    date: '02/04/2024',
+    price: '2.500.000₫',
+    status: 'Đang vận chuyển',
+    statusColor: 'bg-amber-50 text-amber-700',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDi0IMQVTU4-_3MgEwa7W9dUOi0sJLwMa3G9pGFDypxwkIU0jwgmS5h9cJU_kNxj6OksW_9xqWAH5XWk6HNIyV9F1KJHNpq4desG1HzprVm_408EumxZxqEzF3AaK6U-1FZ9L9QgYP7C0P9LioT-Rp6WbQIRwJpHjYjmtLyE8vmMt-yVvLrAi-MIKhToz6ZZ2xNT51-x4ORETaMd1EwP2E0jErkMLDD3afu_3DiZX3fiV2abYoyULO6IEGxEomHxnCcXcGls4pvM8qQ',
+  },
+];
+
 export const ProfilePage = () => {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-8">
-        <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-8 shadow-xl shadow-slate-900/10 text-white">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-amber-500 text-3xl font-bold uppercase text-white shadow-lg shadow-amber-500/20">
-                {mockUser.fullName
-                  .split(' ')
-                  .slice(-2)
-                  .map((part) => part[0])
-                  .join('')}
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-amber-300">Hồ sơ của bạn</p>
-                <h1 className="mt-2 text-3xl font-semibold leading-tight">Xin chào, {mockUser.fullName.split(' ')[0]}</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-300">Đây là trang quản lý thông tin cá nhân. Bạn có thể xem, chỉnh sửa hoặc thay đổi mật khẩu khi cần.</p>
-              </div>
-            </div>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              Quay lại trang chủ
-            </Link>
+    <main className="max-w-screen-2xl mx-auto px-16 py-12 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      <div className="flex gap-12">
+        {/* Sidebar Navigation */}
+        <aside className="w-72 flex-shrink-0">
+          <div className="mb-8 pb-6 border-b-2 border-amber-200">
+            <h2 className="font-bold text-slate-900 mb-1 text-3xl">Tài khoản</h2>
+            <p className="text-amber-600 text-sm font-semibold tracking-wide">Xin chào, {mockUser.fullName.split(' ')[0]}</p>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Vai trò</p>
-              <p className="mt-3 text-xl font-semibold text-white">{mockUser.role === 'customer' ? 'Khách hàng' : mockUser.role}</p>
+          <nav className="space-y-2">
+            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-slate-900 text-white font-semibold shadow-md hover:shadow-lg transition-all" href="#">
+              <span className="material-symbols-outlined text-lg">person</span>
+              Thông tin cá nhân
+            </a>
+            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+              <span className="material-symbols-outlined">history</span>
+              Lịch sử đơn hàng
+            </a>
+            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+              <span className="material-symbols-outlined">location_on</span>
+              Sổ địa chỉ
+            </a>
+            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+              <span className="material-symbols-outlined">payments</span>
+              Phương thức thanh toán
+            </a>
+            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+              <span className="material-symbols-outlined">favorite</span>
+              Danh sách yêu thích
+            </a>
+            <div className="pt-4 mt-4 border-t-2 border-slate-200">
+              <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-600 hover:bg-red-50 hover:text-red-700 hover:shadow-md font-medium shadow-sm transition-all" href="#">
+                <span className="material-symbols-outlined">logout</span>
+                Đăng xuất
+              </a>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Email</p>
-              <p className="mt-3 text-xl font-semibold text-white">{mockUser.email}</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Điện thoại</p>
-              <p className="mt-3 text-xl font-semibold text-white">{mockUser.phone}</p>
-            </div>
-          </div>
-        </div>
+          </nav>
+        </aside>
 
-        <div className="grid gap-6 xl:grid-cols-[0.7fr_0.9fr]">
-          <aside className="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-950">
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Tác vụ nhanh</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Một số thao tác truy cập nhanh cho tài khoản của bạn.</p>
-            </div>
-            <div className="grid gap-3">
-              <button className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Chỉnh sửa hồ sơ</button>
-              <button className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">Đổi mật khẩu</button>
-              <button className="rounded-full border border-rose-500 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-100">Đăng xuất</button>
-            </div>
-          </aside>
-
-          <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-950">
-            <div className="mb-6 flex items-center justify-between">
+        {/* Main Content Area */}
+        <div className="flex-grow space-y-10">
+          {/* Profile Section */}
+          <section className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100 backdrop-blur">
+            <div className="flex justify-between items-center mb-10 pb-6 border-b-2 border-slate-100">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-amber-500">Thông tin tài khoản</p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">Chi tiết người dùng</h2>
+                <h3 className="font-bold text-slate-900 mb-2 text-3xl">Thông tin hồ sơ</h3>
+                <p className="text-slate-500 text-sm">Quản lý thông tin cá nhân của bạn để bảo mật tài khoản</p>
               </div>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">Hoạt động</span>
+              <button className="px-6 py-2.5 bg-slate-900 text-white font-semibold rounded-full hover:shadow-lg transition-all text-sm">
+                Chỉnh sửa
+              </button>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Họ và tên</p>
-                <p className="mt-2 text-lg font-medium text-slate-900 dark:text-slate-100">{mockUser.fullName}</p>
+            <div className="grid grid-cols-2 gap-x-12 gap-y-8">
+              <div className="space-y-2">
+                <label className="text-amber-600 text-xs font-bold uppercase tracking-wider">Họ và tên</label>
+                <p className="text-lg text-slate-900 font-semibold">{mockUser.fullName}</p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Email</p>
-                <p className="mt-2 text-lg font-medium text-slate-900 dark:text-slate-100">{mockUser.email}</p>
+              <div className="space-y-2">
+                <label className="text-amber-600 text-xs font-bold uppercase tracking-wider">Địa chỉ Email</label>
+                <p className="text-lg text-slate-900 font-semibold">{mockUser.email}</p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Số điện thoại</p>
-                <p className="mt-2 text-lg font-medium text-slate-900 dark:text-slate-100">{mockUser.phone}</p>
+              <div className="space-y-2">
+                <label className="text-amber-600 text-xs font-bold uppercase tracking-wider">Số điện thoại</label>
+                <p className="text-lg text-slate-900 font-semibold">{mockUser.phone}</p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Vai trò</p>
-                <p className="mt-2 text-lg font-medium text-slate-900 dark:text-slate-100">{mockUser.role === 'customer' ? 'Khách hàng' : mockUser.role}</p>
+              <div className="space-y-2">
+                <label className="text-amber-600 text-xs font-bold uppercase tracking-wider">Địa chỉ mặc định</label>
+                <p className="text-lg text-slate-900 font-semibold">
+                  {mockUser.addresses[0].line1}, {mockUser.addresses[0].city}, {mockUser.addresses[0].state}
+                </p>
               </div>
             </div>
+          </section>
 
-            <div className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-950">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Địa chỉ</p>
-                  <p className="mt-2 text-base text-slate-500 dark:text-slate-400">Danh sách địa chỉ giao hàng và các thao tác nhanh.</p>
-                </div>
-                <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
-                  <span className="material-symbols-outlined text-base">add</span>
-                  Thêm địa chỉ
-                </button>
-              </div>
-
-              <div className="mt-6 space-y-4">
-              {mockUser.addresses.map((address, index) => (
-                <div
-                  key={index}
-                  className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          {/* Recent Orders */}
+          <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100 backdrop-blur">
+            <div className="flex justify-between items-center mb-8 pb-6 border-b-2 border-slate-100">
+              <h3 className="font-bold text-slate-900 text-3xl">Đơn hàng gần đây</h3>
+              <a className="text-amber-600 font-semibold hover:text-amber-700 underline-offset-4 text-sm" href="#">Xem tất cả</a>
+            </div>
+            <div className="space-y-4">
+              {recentOrders.map((order, index) => (
+                <div key={index} className="flex items-center justify-between p-5 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 hover:shadow-md transition-all">
+                  <div className="flex items-center gap-5">
+                    <div className="w-20 h-20 bg-slate-200 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
+                      <img className="w-full h-full object-cover" src={order.image} alt={order.name} />
+                    </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {address.default ? 'Địa chỉ mặc định' : address.label}
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-                        {`${address.line1}${address.line2 ? `, ${address.line2}` : ''}, ${address.city}, ${address.state}, ${address.country}`}
-                      </p>
+                      <p className="font-semibold text-slate-900 text-base">{order.name}</p>
+                      <p className="text-sm text-slate-500">Mã đơn: <span className="font-medium text-amber-600">{order.id}</span></p>
+                      <p className="text-sm text-slate-500 mt-1">Ngày đặt: {order.date}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-                        aria-label="Chọn địa chỉ"
-                      >
-                        <span className="material-symbols-outlined">check</span>
-                      </button>
-                      <button
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-300 bg-rose-50 text-rose-700 transition hover:bg-rose-100 dark:border-rose-600/50 dark:bg-rose-900/30 dark:text-rose-200 dark:hover:bg-rose-900"
-                        aria-label="Xóa địa chỉ"
-                      >
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
-                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-amber-600 mb-2">{order.price}</p>
+                    <span className={`inline-block px-4 py-1.5 ${order.statusColor} text-xs font-bold uppercase tracking-wider rounded-full`}>{order.status}</span>
                   </div>
                 </div>
               ))}
             </div>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
