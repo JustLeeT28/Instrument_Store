@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const mockUser = {
   fullName: 'Nguyễn Văn A',
   email: 'nguyenvana@example.com',
@@ -52,24 +54,24 @@ export const ProfilePage = () => {
               <span className="material-symbols-outlined text-lg">person</span>
               Thông tin cá nhân
             </a>
-            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+            <a className="flex items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-600 hover:text-amber-600 hover:bg-slate-200/50 font-medium transition-all" href="#">
               <span className="material-symbols-outlined">history</span>
               Lịch sử đơn hàng
             </a>
-            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+            <a className="flex items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-600 hover:text-amber-600 hover:bg-slate-200/50 font-medium transition-all" href="#">
               <span className="material-symbols-outlined">location_on</span>
               Sổ địa chỉ
             </a>
-            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+            <a className="flex items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-600 hover:text-amber-600 hover:bg-slate-200/50 font-medium transition-all" href="#">
               <span className="material-symbols-outlined">payments</span>
               Phương thức thanh toán
             </a>
-            <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-700 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600 hover:text-white hover:shadow-lg font-medium shadow-sm transition-all" href="#">
+            <Link className="flex items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-600 hover:text-amber-600 hover:bg-slate-200/50 font-medium transition-all" to="/favorite">
               <span className="material-symbols-outlined">favorite</span>
               Danh sách yêu thích
-            </a>
+            </Link>
             <div className="pt-4 mt-4 border-t-2 border-slate-200">
-              <a className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white text-slate-600 hover:bg-red-50 hover:text-red-700 hover:shadow-md font-medium shadow-sm transition-all" href="#">
+              <a className="flex items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-500 hover:bg-red-50 hover:text-red-700 font-medium transition-all" href="#">
                 <span className="material-symbols-outlined">logout</span>
                 Đăng xuất
               </a>

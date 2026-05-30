@@ -3,3 +3,4 @@ export { CartPage } from './CartPage';
 export { ProductDetailPage } from './ProductDetailPage';
 export { ProductsPage } from './ProductsPage';
 export { ProfilePage } from './ProfilePage';
+export { FavoritePage } from './FavoritePage';
