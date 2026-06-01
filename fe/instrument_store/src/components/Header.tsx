@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { isAuthenticated } from '../services/auth';
 
 export const Header = () => {
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
@@ -122,9 +123,8 @@ export const Header = () => {
             />
             <span className="material-symbols-outlined absolute right-3 top-2 text-slate-400 text-xl">search</span>
           </div>
-          <Link to="/profile" className="hover:bg-slate-800 transition-all duration-300 p-2 rounded-full active:scale-[0.98]">
-            <span className="material-symbols-outlined text-white">person</span>
-          </Link>
+          {/* Auth actions: show login/register when not authenticated, profile when authenticated */}
+          <AuthActions />
           <Link to="/cart" className="hover:bg-slate-800 transition-all duration-300 p-2 rounded-full active:scale-[0.98] relative">
             <span className="material-symbols-outlined text-white">shopping_cart</span>
             <span className="absolute top-1 right-1 w-2 h-2 bg-amber-600 rounded-full"></span>
@@ -134,3 +134,26 @@ export const Header = () => {
     </header>
   );
 };
+
+function AuthActions() {
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => {
+    setAuthed(isAuthenticated());
+  }, []);
+
+  if (!authed) {
+    return (
+      <div className="hidden lg:flex items-center gap-3">
+        <Link to="/login" className="text-sm text-slate-200 hover:text-white transition-colors">Đăng nhập</Link>
+        <Link to="/register" className="text-sm font-semibold bg-amber-600 text-white px-3 py-2 rounded-md hover:brightness-95 transition">Đăng ký</Link>
+      </div>
+    );
+  }
+
+  return (
+    <Link to="/profile" className="hover:bg-slate-800 transition-all duration-300 p-2 rounded-full active:scale-[0.98]">
+      <span className="material-symbols-outlined text-white">person</span>
+    </Link>
+  );
+}
