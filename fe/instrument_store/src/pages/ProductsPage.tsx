@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
 import type { Product } from '../components/ProductCard';
 
@@ -8,12 +8,23 @@ type ProductFilters = {
   bodyTypes: string[];
 };
 
+type Brand = {
+  id: string;
+  name?: string;
+  band?: string;
+  slug?: string;
+};
+
 export const ProductsPage = () => {
   const [filters, setFilters] = useState<ProductFilters>({
-    brands: ['Taylor Guitars'],
+    brands: [],
     woodTypes: ['Gỗ Vân sam'],
     bodyTypes: [],
   });
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brandLoading, setBrandLoading] = useState(true);
+
+  const fallbackBrands = ['Martin & Co.', 'Taylor Guitars', 'Gibson Acoustic', 'Collings'];
 
   const products: Product[] = [
     {
@@ -66,6 +77,39 @@ export const ProductsPage = () => {
     },
   ];
 
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        // Thay đổi port 8080 cho đúng với Backend của bạn
+        const response = await fetch('http://localhost:8080/brands');
+        if (!response.ok) {
+          throw new Error('Failed to load brands');
+        }
+        const data: Brand[] = await response.json();
+        setBrands(data);
+      } catch (error) {
+        console.error('Brand fetch error:', error);
+      } finally {
+        setBrandLoading(false);
+      }
+    };
+
+    loadBrands();
+  }, []);
+
+  const productBrands = Array.from(new Set(products.map((p) => p.brand)));
+
+  const brandOptions =
+    brands.length > 0
+      ? brands.map((brand) => brand.name ?? brand.band ?? brand.slug ?? '')
+      : productBrands.length > 0
+      ? productBrands
+      : fallbackBrands;
+
+  const filteredProducts = products.filter((product) =>
+    filters.brands.length === 0 || filters.brands.includes(product.brand),
+  );
+
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 py-12 md:py-20">
@@ -87,24 +131,28 @@ export const ProductsPage = () => {
               <div>
                 <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Thương hiệu</h3>
                 <div className="space-y-3">
-                  {['Martin & Co.', 'Taylor Guitars', 'Gibson Acoustic', 'Collings'].map((brand) => (
-                    <label key={brand} className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={filters.brands.includes(brand)}
-                        onChange={(e) => {
-                          setFilters({
-                            ...filters,
-                            brands: e.target.checked
-                              ? [...filters.brands, brand]
-                              : filters.brands.filter((b) => b !== brand),
-                          });
-                        }}
-                        className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500/20"
-                      />
-                      <span className="text-sm text-slate-900 group-hover:text-amber-600 transition-colors">{brand}</span>
-                    </label>
-                  ))}
+                  {brandLoading ? (
+                    <p className="text-sm text-slate-500">Đang tải thương hiệu...</p>
+                  ) : (
+                    brandOptions.map((brand) => (
+                      <label key={brand} className="flex items-center gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={filters.brands.includes(brand)}
+                          onChange={(e) => {
+                            setFilters({
+                              ...filters,
+                              brands: e.target.checked
+                                ? [...filters.brands, brand]
+                                : filters.brands.filter((b) => b !== brand),
+                            });
+                          }}
+                          className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500/20"
+                        />
+                        <span className="text-sm text-slate-900 group-hover:text-amber-600 transition-colors">{brand}</span>
+                      </label>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -177,7 +225,7 @@ export const ProductsPage = () => {
           <section className="flex-1">
             {/* Sort Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-slate-200 pb-4">
-              <span className="text-sm text-slate-600">Hiển thị {products.length} trong số 142 Đàn Guitar</span>
+              <span className="text-sm text-slate-600">Hiển thị {filteredProducts.length} trong số {products.length} Đàn Guitar</span>
               <div className="flex items-center gap-4">
                 <label className="text-sm text-slate-600 font-semibold">Sắp xếp theo:</label>
                 <select className="bg-transparent border-none text-sm text-slate-900 focus:ring-0 cursor-pointer">
@@ -191,7 +239,7 @@ export const ProductsPage = () => {
 
             {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
