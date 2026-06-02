@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 type Category = {
   id: string;
@@ -21,7 +22,7 @@ export const Categories = ({ selected, onChange }: Props) => {
     const load = async () => {
       try {
         setError(null);
-        const res = await fetch('http://localhost:8080/categories');
+        const res = await fetch(`${API_BASE}/categories`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data: Category[] = await res.json();
         data.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));

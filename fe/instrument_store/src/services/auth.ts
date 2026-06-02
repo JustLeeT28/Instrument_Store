@@ -1,5 +1,17 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
+function getTokenExpiryMs(token: string): number | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface RegisterData {
   email: string;
   password: string;
@@ -33,9 +45,19 @@ export async function login(data: LoginData) {
 }
 
 export function isAuthenticated() {
-  return !!localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+
+  const expiresAt = getTokenExpiryMs(token);
+  if (expiresAt && Date.now() >= expiresAt) {
+    localStorage.removeItem('token');
+    return false;
+  }
+
+  return true;
 }
 
 export function logout() {
   localStorage.removeItem('token');
+  window.dispatchEvent(new Event('auth-change'));
 }

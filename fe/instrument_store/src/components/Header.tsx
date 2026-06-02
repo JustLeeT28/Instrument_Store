@@ -160,10 +160,21 @@ export const Header = () => {
 };
 
 function AuthActions() {
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState(() => isAuthenticated());
 
   useEffect(() => {
-    setAuthed(isAuthenticated());
+    const syncAuth = () => setAuthed(isAuthenticated());
+    syncAuth();
+
+    const timer = window.setInterval(syncAuth, 60_000);
+    window.addEventListener('focus', syncAuth);
+    window.addEventListener('auth-change', syncAuth);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', syncAuth);
+      window.removeEventListener('auth-change', syncAuth);
+    };
   }, []);
 
   if (!authed) {

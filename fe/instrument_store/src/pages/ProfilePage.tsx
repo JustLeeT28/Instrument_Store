@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { logout } from '../services/auth';
 
 const mockUser = {
   fullName: 'Nguyễn Văn A',
@@ -40,6 +41,13 @@ const recentOrders = [
 ];
 
 export const ProfilePage = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <main className="max-w-screen-2xl mx-auto px-16 py-12 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <div className="flex gap-12">
@@ -71,10 +79,14 @@ export const ProfilePage = () => {
               Danh sách yêu thích
             </Link>
             <div className="pt-4 mt-4 border-t-2 border-slate-200">
-              <a className="flex items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-500 hover:bg-red-50 hover:text-red-700 font-medium transition-all" href="#">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-4 px-4 py-3 rounded-none bg-transparent text-slate-500 hover:bg-red-50 hover:text-red-700 font-medium transition-all text-left"
+              >
                 <span className="material-symbols-outlined">logout</span>
                 Đăng xuất
-              </a>
+              </button>
             </div>
           </nav>
         </aside>
