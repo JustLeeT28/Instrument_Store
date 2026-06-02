@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
 import { Categories } from '../components/Categories';
+import { API_BASE } from '../services/api';
 import type { Product } from '../components/ProductCard';
 
 type ProductFilters = {
@@ -83,8 +84,7 @@ export const ProductsPage = () => {
   useEffect(() => {
     const loadBrands = async () => {
       try {
-        // Thay đổi port 8080 cho đúng với Backend của bạn
-        const response = await fetch('http://localhost:8080/brands');
+        const response = await fetch(`${API_BASE}/brands`);
         if (!response.ok) {
           throw new Error('Failed to load brands');
         }

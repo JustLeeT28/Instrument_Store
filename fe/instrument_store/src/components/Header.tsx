@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { isAuthenticated } from '../services/auth';
+import { API_BASE } from '../services/api';
 
 export const Header = () => {
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
@@ -14,7 +15,7 @@ export const Header = () => {
     const load = async () => {
       try {
         setProductLoading(true);
-        const res = await fetch('http://localhost:8080/categories');
+        const res = await fetch(`${API_BASE}/categories`);
         if (!res.ok) throw new Error('Failed to load categories');
         const data = await res.json();
         setProductCategories(data.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })));

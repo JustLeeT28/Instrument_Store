@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { API_BASE } from './api';
 
 function getTokenExpiryMs(token: string): number | null {
   const parts = token.split('.');
@@ -24,13 +24,28 @@ export interface LoginData {
   password: string;
 }
 
+async function readErrorMessage(res: Response) {
+  const text = await res.text();
+
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed?.message === 'string' && parsed.message.trim()) {
+      return parsed.message;
+    }
+  } catch {
+    // Fall back to raw response text below.
+  }
+
+  return text || 'Đăng nhập thất bại';
+}
+
 export async function register(data: RegisterData) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new Error(await readErrorMessage(res));
   return res.json();
 }
 
@@ -40,7 +55,7 @@ export async function login(data: LoginData) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new Error(await readErrorMessage(res));
   return res.json();
 }
 
