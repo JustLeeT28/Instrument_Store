@@ -6,8 +6,28 @@ export const Header = () => {
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
-  const productCategories = ['Guitar', 'Violin', 'Organ', 'Piano', 'Trống', 'Amplifer', 'Pedal & Effect'];
+  const [productCategories, setProductCategories] = useState<{ id: string; name: string; slug?: string }[]>([]);
+  const [productLoading, setProductLoading] = useState(true);
   const courseCategories = ['Guitar', 'Violin', 'Piano', 'Trống'];
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setProductLoading(true);
+        const res = await fetch('http://localhost:8080/categories');
+        if (!res.ok) throw new Error('Failed to load categories');
+        const data = await res.json();
+        setProductCategories(data.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })));
+      } catch (err) {
+        console.error('Load categories error:', err);
+        setProductCategories([]);
+      } finally {
+        setProductLoading(false);
+      }
+    };
+
+    load();
+  }, []);
 
   return (
     <header className="bg-black/70 backdrop-blur-md text-white sticky top-0 z-50 border-b border-slate-800 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.3)]">
@@ -51,21 +71,25 @@ export const Header = () => {
             </button>
             {hoveredMenu === 'products' && (
               <div className="dropdown-menu absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-xl shadow-xl py-3 w-56 z-50">
-                {productCategories.map((category) => (
-                  <a
-                    key={category}
-                    href="#"
-                    onMouseEnter={() => setHoveredItem(category)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    className={`block px-4 py-3 transition-all duration-150 border-l-3 ${
-                      hoveredItem === category
-                        ? 'border-l-amber-500 bg-amber-50 text-amber-600 translate-x-1'
-                        : 'border-l-transparent text-slate-700 hover:text-slate-900'
-                    }`}
-                  >
-                    {category}
-                  </a>
-                ))}
+                {productLoading ? (
+                  <div className="px-4 py-3 text-sm text-slate-500">Đang tải...</div>
+                ) : (
+                  productCategories.map((category) => (
+                    <a
+                      key={category.id}
+                      href={`/products?category=${category.slug ?? ''}`}
+                      onMouseEnter={() => setHoveredItem(category.name)}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      className={`block px-4 py-3 transition-all duration-150 border-l-3 ${
+                        hoveredItem === category.name
+                          ? 'border-l-amber-500 bg-amber-50 text-amber-600 translate-x-1'
+                          : 'border-l-transparent text-slate-700 hover:text-slate-900'
+                      }`}
+                    >
+                      {category.name}
+                    </a>
+                  ))
+                )}
               </div>
             )}
           </div>

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
+import { Categories } from '../components/Categories';
 import type { Product } from '../components/ProductCard';
 
 type ProductFilters = {
   brands: string[];
   woodTypes: string[];
   bodyTypes: string[];
+  categories?: string[];
 };
 
 type Brand = {
@@ -20,6 +22,7 @@ export const ProductsPage = () => {
     brands: [],
     woodTypes: ['Gỗ Vân sam'],
     bodyTypes: [],
+    categories: [],
   });
   const [brands, setBrands] = useState<Brand[]>([]);
   const [brandLoading, setBrandLoading] = useState(true);
@@ -127,6 +130,16 @@ export const ProductsPage = () => {
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-72 flex-shrink-0">
             <div className="space-y-8 lg:sticky lg:top-32">
+              {/* Categories */}
+              <div>
+                <Categories
+                  selected={filters.categories ?? []}
+                  onChange={(cats) => setFilters({ ...filters, categories: cats })}
+                />
+              </div>
+
+              {/* Divider between categories and other filters */}
+              <div className="border-t border-slate-200 my-4" />
               {/* Brand Filter */}
               <div>
                 <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Thương hiệu</h3>

@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/auth/**", "/error").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/brands", "/brands/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**").permitAll()
                     .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
@@ -43,10 +43,14 @@ public class SecurityConfig {
         // Explicit origins only when allowCredentials is true
         configuration.setAllowedOrigins(List.of(
             "http://localhost:5173",
+            "http://127.0.0.1:5173",
             "http://localhost:3000",
+            "http://127.0.0.1:3000",
             "http://localhost:8080",
             "https://instrument-store.onrender.com"
         ));
+        // allow origin patterns as a fallback during local development
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
