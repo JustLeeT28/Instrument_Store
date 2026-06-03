@@ -9,6 +9,8 @@ type ProductFilters = {
   woodTypes: string[];
   bodyTypes: string[];
   categories?: string[];
+  minPrice: number;
+  maxPrice: number;
 };
 
 type Brand = {
@@ -24,11 +26,11 @@ export const ProductsPage = () => {
     woodTypes: ['Gỗ Vân sam'],
     bodyTypes: [],
     categories: [],
+    minPrice: 0,
+    maxPrice: 300000000,
   });
   const [brands, setBrands] = useState<Brand[]>([]);
   const [brandLoading, setBrandLoading] = useState(true);
-
-  const fallbackBrands = ['Martin & Co.', 'Taylor Guitars', 'Gibson Acoustic', 'Collings'];
 
   const products: Product[] = [
     {
@@ -82,6 +84,8 @@ export const ProductsPage = () => {
   ];
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadBrands = async () => {
       try {
         const response = await fetch(`${API_BASE}/brands`);
@@ -90,14 +94,22 @@ export const ProductsPage = () => {
         }
         const data: Brand[] = await response.json();
         setBrands(data);
+        if (isMounted) {
+          setBrands(data);
+        }
       } catch (error) {
         console.error('Brand fetch error:', error);
       } finally {
         setBrandLoading(false);
+        if (isMounted) {
+          setBrandLoading(false);
+        }
       }
     };
 
     loadBrands();
+
+    return () => { isMounted = false; };
   }, []);
 
   const productBrands = Array.from(new Set(products.map((p) => p.brand)));
@@ -105,12 +117,13 @@ export const ProductsPage = () => {
   const brandOptions =
     brands.length > 0
       ? brands.map((brand) => brand.name ?? brand.band ?? brand.slug ?? '')
-      : productBrands.length > 0
-      ? productBrands
-      : fallbackBrands;
+      : productBrands;
 
   const filteredProducts = products.filter((product) =>
-    filters.brands.length === 0 || filters.brands.includes(product.brand),
+    (filters.brands.length === 0 || filters.brands.includes(product.brand)) &&
+    // Nếu giá sản phẩm đã là VNĐ, so sánh trực tiếp không cần chia tỷ giá
+    product.price >= filters.minPrice && 
+    product.price <= filters.maxPrice
   );
 
   return (
@@ -171,16 +184,83 @@ export const ProductsPage = () => {
 
               {/* Price Range */}
               <div>
-                <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Giá</h3>
-                <div className="px-2">
-                  <input type="range" min="500" max="15000" step="500" className="w-full accent-amber-600" />
-                  <div className="flex justify-between mt-2 text-xs text-slate-600">
-                    <span>$500</span>
-                    <span>$15,000+</span>
+                <h3 className="text-xs font-semibold text-slate-600 uppercase mb-6">Khoảng giá (VNĐ)</h3>
+                <div className="px-2 space-y-6">
+                  {/* Dual Range Slider */}
+                  <div className="relative h-6 w-full flex items-center">
+                    {/* Background Track */}
+                    <div className="absolute w-full h-2 bg-slate-200 rounded-full" />
+                    <div 
+                      className="absolute h-2 bg-amber-600 rounded-full"
+                      style={{
+                        left: `${(filters.minPrice / 300000000) * 100}%`,
+                        right: `${100 - (filters.maxPrice / 300000000) * 100}%`
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min="0"
+                      max="300000000"
+                      step="1000000"
+                      value={filters.minPrice}
+                      onChange={(e) => {
+                        const val = Math.min(Number(e.target.value), filters.maxPrice - 1000000);
+                        setFilters({ ...filters, minPrice: val });
+                      }}
+                      className="absolute w-full h-6 bg-transparent appearance-none pointer-events-none cursor-pointer m-0 top-0 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-runnable-track]:bg-transparent [&::-moz-range-track]:bg-transparent"
+                    />
+                    <input
+                      type="range"
+                      min="0"
+                      max="300000000"
+                      step="1000000"
+                      value={filters.maxPrice}
+                      onChange={(e) => {
+                        const val = Math.max(Number(e.target.value), filters.minPrice + 1000000);
+                        setFilters({ ...filters, maxPrice: val });
+                      }}
+                      className="absolute w-full h-6 bg-transparent appearance-none pointer-events-none cursor-pointer m-0 top-0 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-runnable-track]:bg-transparent [&::-moz-range-track]:bg-transparent"
+                    />
+                  </div>
+
+                  {/* Price Inputs */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-500 font-bold uppercase">Tối thiểu</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={filters.minPrice.toLocaleString('vi-VN')}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/\D/g, '');
+                            const val = Math.min(Number(rawValue), 300000000);
+                            setFilters({ ...filters, minPrice: val });
+                          }}
+                          className="w-full text-xs font-semibold p-2 border border-slate-200 rounded focus:ring-1 focus:ring-amber-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2 text-[10px] text-slate-400">₫</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-500 font-bold uppercase">Tối đa</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={filters.maxPrice.toLocaleString('vi-VN')}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/\D/g, '');
+                            const val = Math.min(Number(rawValue), 300000000);
+                            setFilters({ ...filters, maxPrice: val });
+                          }}
+                          className="w-full text-xs font-semibold p-2 border border-slate-200 rounded focus:ring-1 focus:ring-amber-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2 text-[10px] text-slate-400">₫</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-
+              
               {/* Wood Type */}
               <div>
                 <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Loại gỗ</h3>
