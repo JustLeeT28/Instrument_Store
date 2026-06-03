@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
-import { API_BASE } from '../services/api';
-
-type Category = {
-  id: string;
-  name: string;
-  slug?: string;
-  position?: number;
-};
+import { fetchCategories, getCachedCategories, type Category } from '../services/categories';
 
 type Props = {
   selected: string[];
@@ -14,28 +7,45 @@ type Props = {
 };
 
 export const Categories = ({ selected, onChange }: Props) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialCategories = getCachedCategories();
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [loading, setLoading] = useState(() => initialCategories.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const load = async () => {
       try {
         setError(null);
-        const res = await fetch(`${API_BASE}/categories`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data: Category[] = await res.json();
-        data.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-        setCategories(data);
+        const data = await fetchCategories();
+        if (isMounted) {
+          setCategories(data);
+        }
       } catch (err) {
-        setError('Không thể tải danh mục. Vui lòng thử lại sau.');
-        setCategories([]);
+        console.error('Load categories error:', err);
+        const cachedCategories = getCachedCategories();
+        if (cachedCategories.length > 0) {
+          if (isMounted) {
+            setCategories(cachedCategories);
+            setError(null);
+          }
+        } else if (isMounted) {
+          setError('Không thể tải danh mục. Vui lòng thử lại sau.');
+          setCategories([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const toggle = (name: string) => {

@@ -1,33 +1,42 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { isAuthenticated } from '../services/auth';
-import { API_BASE } from '../services/api';
+import { fetchCategories, getCachedCategories, type Category } from '../services/categories';
 
 export const Header = () => {
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-
-  const [productCategories, setProductCategories] = useState<{ id: string; name: string; slug?: string }[]>([]);
-  const [productLoading, setProductLoading] = useState(true);
+  const initialCategories = getCachedCategories();
+  const [productCategories, setProductCategories] = useState<Category[]>(initialCategories);
+  const [productLoading, setProductLoading] = useState(() => initialCategories.length === 0);
   const courseCategories = ['Guitar', 'Violin', 'Piano', 'Trống'];
 
   useEffect(() => {
+    let isMounted = true;
+
     const load = async () => {
       try {
-        setProductLoading(true);
-        const res = await fetch(`${API_BASE}/categories`);
-        if (!res.ok) throw new Error('Failed to load categories');
-        const data = await res.json();
-        setProductCategories(data.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })));
+        const data = await fetchCategories();
+        if (isMounted) {
+          setProductCategories(data);
+        }
       } catch (err) {
         console.error('Load categories error:', err);
-        setProductCategories([]);
+        if (isMounted) {
+          setProductCategories(getCachedCategories());
+        }
       } finally {
-        setProductLoading(false);
+        if (isMounted) {
+          setProductLoading(false);
+        }
       }
     };
 
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -76,9 +85,9 @@ export const Header = () => {
                   <div className="px-4 py-3 text-sm text-slate-500">Đang tải...</div>
                 ) : (
                   productCategories.map((category) => (
-                    <a
+                    <Link
                       key={category.id}
-                      href={`/products?category=${category.slug ?? ''}`}
+                      to={`/products?category=${category.slug ?? ''}`}
                       onMouseEnter={() => setHoveredItem(category.name)}
                       onMouseLeave={() => setHoveredItem(null)}
                       className={`block px-4 py-3 transition-all duration-150 border-l-3 ${
@@ -88,7 +97,7 @@ export const Header = () => {
                       }`}
                     >
                       {category.name}
-                    </a>
+                    </Link>
                   ))
                 )}
               </div>

@@ -20,8 +20,8 @@ export const LoginPage = () => {
       } else {
         setError('Đăng nhập thất bại');
       }
-    } catch (err: any) {
-      setError(err?.message || 'Lỗi khi đăng nhập');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lỗi khi đăng nhập');
     }
   };
 
