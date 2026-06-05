@@ -16,6 +16,7 @@ export const LoginPage = () => {
       const resp = await login({ email, password });
       if (resp?.token) {
         localStorage.setItem('token', resp.token);
+        window.dispatchEvent(new Event('auth-change'));
         navigate('/');
       } else {
         setError('Đăng nhập thất bại');

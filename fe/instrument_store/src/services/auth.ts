@@ -24,6 +24,24 @@ export interface LoginData {
   password: string;
 }
 
+export interface CurrentUser {
+  id: string;
+  email: string;
+  fullName: string | null;
+  phone: string | null;
+  role: 'CUSTOMER' | 'STUDENT' | 'TEACHER' | 'ADMIN';
+  status: boolean;
+  createdAt: string;
+  updatedAt: string;
+  defaultAddress: {
+    id: string;
+    line1: string;
+    city: string;
+    ward: string | null;
+    defaultAddress: boolean;
+  } | null;
+}
+
 async function readErrorMessage(res: Response) {
   const text = await res.text();
 
@@ -33,10 +51,22 @@ async function readErrorMessage(res: Response) {
       return parsed.message;
     }
   } catch {
-    // Fall back to raw response text below.
+    // Fall back to the raw response text below.
   }
 
-  return text || 'Đăng nhập thất bại';
+  return text || 'Dang nhap that bai';
+}
+
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Vui long dang nhap');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
 }
 
 export async function register(data: RegisterData) {
@@ -56,6 +86,18 @@ export async function login(data: LoginData) {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
+export async function fetchCurrentUser(): Promise<CurrentUser> {
+  const res = await fetch(`${API_BASE}/users/me`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+
   return res.json();
 }
 
