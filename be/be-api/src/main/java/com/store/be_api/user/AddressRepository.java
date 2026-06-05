@@ -5,5 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AddressRepository extends JpaRepository<Address, UUID> {
-    Optional<Address> findFirstByUserIdOrderByDefaultAddressDescUpdatedAtDescCreatedAtDesc(UUID userId);
+    Optional<Address> findFirstByUserIdAndDefaultAddressTrueOrderByUpdatedAtDescCreatedAtDesc(UUID userId);
+
+    Optional<Address> findFirstByUserIdOrderByUpdatedAtDescCreatedAtDesc(UUID userId);
 }
