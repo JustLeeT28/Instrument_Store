@@ -83,7 +83,10 @@ export const ProductDetailPage = () => {
                 </span>
               </div>
 
-              <p className="text-3xl font-bold text-amber-600">${(product.price ?? 0).toLocaleString()}</p>
+              <p className="text-4xl md:text-5xl font-bold text-amber-600 text-center">
+                <span>{(product.price ?? 0).toLocaleString()}</span>
+                <span className="inline-block text-sm underline transform -translate-y-2 ml-2">đ</span>
+              </p>
             </div>
 
             <div className="space-y-4">

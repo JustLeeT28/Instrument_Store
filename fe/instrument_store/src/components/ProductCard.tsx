@@ -41,7 +41,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </Link>
       <p className="text-xs text-slate-500 mb-3 uppercase tracking-tight">{product.brand}</p>
       <div className="flex items-center justify-between">
-        <p className="text-base font-semibold text-amber-600">${product.price.toLocaleString()}</p>
+        <p className="text-base font-semibold text-amber-600">{product.price.toLocaleString()} đ</p>
         {product.rating && (
           <div className="flex items-center gap-1">
             <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>

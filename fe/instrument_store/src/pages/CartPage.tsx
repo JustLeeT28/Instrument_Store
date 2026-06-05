@@ -63,7 +63,7 @@ export const CartPage = () => {
                       <h3 className="text-lg font-semibold text-slate-900 mb-1">{item.name}</h3>
                       <p className="text-sm text-slate-600 line-clamp-2 md:max-w-md">{item.description}</p>
                     </div>
-                    <span className="text-lg font-bold text-amber-600">${item.price.toLocaleString()}</span>
+                    <span className="text-lg font-bold text-amber-600">{item.price.toLocaleString()} đ</span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
@@ -104,7 +104,7 @@ export const CartPage = () => {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Tạm tính</span>
-                  <span className="text-slate-900 font-semibold">${subtotal.toLocaleString()}</span>
+                  <span className="text-slate-900 font-semibold">{subtotal.toLocaleString()} đ</span>
                 </div>
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Phí vận chuyển</span>
@@ -112,7 +112,7 @@ export const CartPage = () => {
                 </div>
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Thuế dự kiến</span>
-                  <span className="text-slate-900 font-semibold">${tax.toLocaleString()}</span>
+                  <span className="text-slate-900 font-semibold">{tax.toLocaleString()} đ</span>
                 </div>
               </div>
 
@@ -133,7 +133,7 @@ export const CartPage = () => {
               <div className="border-t border-slate-100 pt-6 mb-10">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-lg font-semibold text-slate-900">Tổng cộng</span>
-                  <span className="text-4xl font-bold text-slate-900">${total.toLocaleString()}</span>
+                  <span className="text-4xl font-bold text-slate-900">{total.toLocaleString()} đ</span>
                 </div>
                 <p className="text-[10px] text-slate-500 text-right">THANH TOÁN ĐƯỢC BẢO MẬT SSL</p>
               </div>
