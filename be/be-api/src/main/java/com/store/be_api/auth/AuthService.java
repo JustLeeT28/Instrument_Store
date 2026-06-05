@@ -1,6 +1,7 @@
 package com.store.be_api.auth;
 
 import com.store.be_api.auth.dto.AuthResponse;
+import com.store.be_api.auth.dto.AddressResponse;
 import com.store.be_api.auth.dto.LoginRequest;
 import com.store.be_api.auth.dto.RegisterRequest;
 import com.store.be_api.auth.dto.UserResponse;
@@ -39,7 +40,7 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .token(token)
-                .user(UserResponse.fromUser(savedUser))
+                .user(UserResponse.fromUser(savedUser, null))
                 .build();
     }
 
@@ -54,7 +55,7 @@ public class AuthService {
         String token = jwtService.generateToken(user);
         return AuthResponse.builder()
                 .token(token)
-                .user(UserResponse.fromUser(user))
+                .user(UserResponse.fromUser(user, null))
                 .build();
     }
 }
