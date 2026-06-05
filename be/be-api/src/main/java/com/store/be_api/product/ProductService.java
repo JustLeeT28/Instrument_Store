@@ -1,7 +1,10 @@
 package com.store.be_api.product;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.store.be_api.product.dto.ProductDto;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -14,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class ProductService {
     private final ProductRepository productRepository;
+    private final ObjectMapper objectMapper;
 
     private static final String PLACEHOLDER_IMAGE = "https://via.placeholder.com/600x800?text=No+Image";
 
@@ -28,7 +32,22 @@ public class ProductService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
     }
 
+    public ProductDto getBySlug(String slug) {
+        Optional<Product> opt = productRepository.findBySlug(slug);
+        return opt.map(this::toDto)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+    }
+
     private ProductDto toDto(Product p) {
+        Map<String, Object> specsMap = null;
+        try {
+            if (p.getSpecs() != null) {
+                specsMap = objectMapper.readValue(p.getSpecs(), new TypeReference<Map<String, Object>>() {});
+            }
+        } catch (Exception e) {
+            specsMap = Map.of();
+        }
+
         return ProductDto.builder()
                 .id(p.getId())
                 .name(p.getName())
@@ -42,6 +61,7 @@ public class ProductService {
                 .stockQty(p.getStockQty())
                 .description(p.getDescription())
                 .image(PLACEHOLDER_IMAGE)
+                .specs(specsMap)
                 .build();
     }
 }

@@ -23,4 +23,5 @@ public class ProductDto {
     private Integer stockQty;
     private String description;
     private String image;
+    private java.util.Map<String, Object> specs;
 }

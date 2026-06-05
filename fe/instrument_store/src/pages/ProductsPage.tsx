@@ -46,6 +46,7 @@ export const ProductsPage = () => {
           // Map backend shape to Product interface if needed
           const mapped: Product[] = data.map((p: any) => ({
             id: p.id,
+            slug: p.slug,
             name: p.name,
             brand: p.brand ?? p.category ?? 'Unknown',
             price: p.price ?? 0,

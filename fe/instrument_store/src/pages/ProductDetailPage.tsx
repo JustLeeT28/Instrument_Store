@@ -1,62 +1,34 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { API_BASE } from '../services/api';
 
 export const ProductDetailPage = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
+  const [product, setProduct] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const product = {
-    id: id || '1',
-    name: 'The Heritage D-28',
-    brand: 'Martin & Co.',
-    price: 3850,
-    rating: 4.8,
-    reviewCount: 124,
-    badge: 'Phiên bản giới hạn',
-    description: `Được chế tác thủ công trong xưởng boutique của chúng tôi, Heritage D-28 đại diện cho đỉnh cao của cộng hưởng âm thanh.
-                  Được làm từ gỗ Thông Sitka 50 năm tuổi và gỗ Hồng sắc Ấn Độ cao cấp, nó mang lại âm thanh tâm hồn, vang dội,
-                  kế thừa di sản của nhiều thế hệ.`,
-    images: [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuB8k40c-NIY0f72jQ3zYgibJPrTWxSNQiKFyWU6IP66j1pVt4nNkf0shng49_CCFzIl5kqSOfxa_8S4gxBGS27G1CYAW_8yDCzxtSy7gqVFCRSFD30_ncS8qY0-BwAR5SFlkf6cu_NXtm1opDr5Udd10EOYoibnBtCBSaVSRPLpyVXVbVzpifc__u10ztDZ0xZ1L3Y09v7tnHFLxuZRy07t5OUqDQzvLCBXwM6-cOPZuh5NNmgxtCWpuyBN9BNbvwD1OwiZmW4Kkzde',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCHYdvJVZ8jYBszs-afbFHbkwKxKN8RF0vzgBlN2FQilYxPH-h1KHjICZBp_iRlF23cGy5t981cwAifXpdw5Rm6iFhZnttvsQBmnPJeErd7HK9XK953g-Wazqc1k_Tu5O2czyCGcncj-suW-m-35_GuQcgRS2yrEtlUchdoDp-hrzrJc5JKuGQBFuh3chgr9OY43hsL7N8Jk00Q5mG3RAnurKYPL1ZfdeKJAHoda0NAzZXLNeCbHorXIKHPjGaxmlHcFpUwXUdLmPPQ',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDUXLAXYDFh37vpwSNELqQU1oKzAMi2JVV0m3hXeyn4CZOijFI3XiXfHcVur4sMo19dLHei3KKrAnTKa_IOC4laH2UVPxKNjcDrcF8yUXQMwOElAAJFL8yzYk0XHhqlAkP7700te9ggorqsAeUJOukdOHSKjmEcfQhu4jFylA_AkGu4gfU_Rafvx7MsEdfgKcruM0099FpJjpntKgPr8VCi7Ri2vZ_nHbYCmDgIRIZ4VwwHnAnbwh0mem-Sl2IFBNg0TCDI7SgW0QAk',
-    ],
-    specs: {
-      'Hình dáng thân': 'Dreadnought 14-Fret',
-      'Chất liệu mặt trước': 'Solid Sitka Spruce',
-      'Mặt lưng & Hông': 'East Indian Rosewood',
-      'Hình dáng cần': 'Modified Low Oval',
-      'Dây đàn': 'Martin® Authentic Acoustic® Lifespan® 2.0',
-      'Chất liệu lược đàn': 'Bone',
-    },
-    reviews: [
-      {
-        id: '1',
-        rating: 5,
-        title: 'Sự cộng hưởng tuyệt vời',
-        content:
-          'Tôi đã chơi hàng chục cây D-28 cổ điển, và mẫu Heritage này ngang ngửa với những cây tốt nhất. Độ rõ nét ở âm trầm thật sự không gì sánh bằng.',
-        author: 'Julian D.',
-        role: 'Nghệ sĩ chuyên nghiệp',
-      },
-      {
-        id: '2',
-        rating: 4,
-        title: 'Một kiệt tác hiện đại',
-        content:
-          'Sự thủ công thật hoàn mỹ. Mọi khớp nối, mọi lớp đánh bóng, mọi chi tiết đều hoàn hảo. Điểm trừ duy nhất là phải mất 4 tháng mới nhận được hàng.',
-        author: 'Sarah M.',
-        role: 'Nhà sưu tầm',
-      },
-      {
-        id: '3',
-        rating: 5,
-        title: 'Chi tiết hài hòa phong phú',
-        content:
-          'Tôi sử dụng cây này cho tất cả các bản thu âm studio của mình. Nó thu âm rất sạch với EQ tối thiểu. Mặt trước gỗ Thông có độ sáng không bao giờ gây chói.',
-        author: 'Robert K.',
-        role: 'Kỹ sư Studio',
-      },
-    ],
-  };
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!slug) return;
+      try {
+        setLoading(true);
+        const resp = await fetch(`${API_BASE}/products/slug/${encodeURIComponent(slug)}`);
+        if (!resp.ok) throw new Error('Product not found');
+        const data = await resp.json();
+        if (mounted) setProduct(data);
+      } catch (e) {
+        console.error('Failed to load product', e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [slug]);
+
+  if (loading) return <div className="p-8">Đang tải...</div>;
+  if (!product) return <div className="p-8">Sản phẩm không tồn tại.</div>;
 
   return (
     <div className="min-h-screen bg-white">
@@ -81,24 +53,21 @@ export const ProductDetailPage = () => {
               <div className="col-span-2 aspect-[4/5] bg-slate-100 rounded-lg overflow-hidden group">
                 <img
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  src={product.images[0]}
+                  src={product.image ?? 'https://via.placeholder.com/600x800?text=No+Image'}
                   alt={product.name}
                 />
               </div>
-              {product.images.slice(1).map((img, idx) => (
-                <div key={idx} className="aspect-square bg-slate-100 rounded-lg overflow-hidden group">
-                  <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={img} alt={`View ${idx + 2}`} />
-                </div>
-              ))}
             </div>
           </div>
 
           {/* Product Info */}
           <div className="lg:col-span-5 flex flex-col space-y-8 lg:sticky lg:top-32 h-fit">
             <div className="space-y-4">
-              <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold">
-                {product.badge}
-              </span>
+              {product.badge && (
+                <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold">
+                  {product.badge}
+                </span>
+              )}
               <h1 className="text-4xl font-bold text-slate-900">{product.name}</h1>
 
               <div className="flex items-center space-x-2">
@@ -110,11 +79,11 @@ export const ProductDetailPage = () => {
                   ))}
                 </div>
                 <span className="text-sm text-slate-600">
-                  {product.rating} ({product.reviewCount} Đánh giá)
+                  {product.rating ?? '-'} ({product.reviewCount ?? 0} Đánh giá)
                 </span>
               </div>
 
-              <p className="text-3xl font-bold text-amber-600">${product.price.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-amber-600">${(product.price ?? 0).toLocaleString()}</p>
             </div>
 
             <div className="space-y-4">
@@ -143,10 +112,10 @@ export const ProductDetailPage = () => {
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-900">Thông số kỹ thuật</h3>
               </div>
               <div className="divide-y divide-slate-200">
-                {Object.entries(product.specs).map(([key, value], idx) => (
+                {product.specs && Object.entries(product.specs).map(([key, value], idx) => (
                   <div key={idx} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 px-6 py-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                     <span className="text-xs text-slate-600 font-semibold">{key}</span>
-                    <span className="sm:col-span-2 text-sm text-slate-900">{value}</span>
+                    <span className="sm:col-span-2 text-sm text-slate-900">{String(value)}</span>
                   </div>
                 ))}
               </div>
@@ -210,7 +179,7 @@ export const ProductDetailPage = () => {
 
           {/* Review Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {product.reviews.map((review) => (
+            {product.reviews?.map((review: any) => (
               <div key={review.id} className="bg-white p-8 rounded-2xl shadow-md border border-slate-100 flex flex-col justify-between h-full">
                 <div className="space-y-4">
                   <div className="flex text-amber-500">

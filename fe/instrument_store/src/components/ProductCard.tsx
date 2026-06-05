@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 
 export interface Product {
   id: string;
+  slug?: string;
   name: string;
   brand: string;
   price: number;
@@ -29,13 +30,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
         <Link
-          to={`/product/${product.id}`}
+          to={`/product/${product.slug ?? product.id}`}
           className="absolute bottom-0 left-0 w-full py-4 bg-black text-white translate-y-full group-hover:translate-y-0 transition-transform font-semibold text-sm flex items-center justify-center"
         >
           XEM NHANH
         </Link>
       </div>
-      <Link to={`/product/${product.id}`} className="hover:underline">
+      <Link to={`/product/${product.slug ?? product.id}`} className="hover:underline">
         <h4 className="text-base font-semibold text-slate-900 mb-1">{product.name}</h4>
       </Link>
       <p className="text-xs text-slate-500 mb-3 uppercase tracking-tight">{product.brand}</p>
