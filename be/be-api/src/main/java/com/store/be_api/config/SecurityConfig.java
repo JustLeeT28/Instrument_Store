@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/auth/**", "/error").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**", "/api/products", "/api/products/**", "/products", "/products/**").permitAll()
                     .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())

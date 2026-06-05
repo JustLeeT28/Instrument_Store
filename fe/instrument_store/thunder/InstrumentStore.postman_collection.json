@@ -79,5 +79,89 @@
         }
       ]
     }
+    ,
+    {
+      "name": "Get Products",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "products"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response is array', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "});",
+              "pm.test('Each item has id,name,price,image', function () {",
+              "  const body = pm.response.json();",
+              "  if(body.length > 0) {",
+              "    pm.expect(body[0]).to.have.property('id');",
+              "    pm.expect(body[0]).to.have.property('name');",
+              "    pm.expect(body[0]).to.have.property('price');",
+              "    pm.expect(body[0]).to.have.property('image');",
+              "    // store first id for subsequent tests",
+              "    pm.environment.set('productId', body[0].id);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Product by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/{{productId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "products",
+            "{{productId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 404 if not found', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200,404]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  pm.test('Product has id and name', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property('id');",
+              "    pm.expect(body).to.have.property('name');",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ]
+    }
   ]
 }
