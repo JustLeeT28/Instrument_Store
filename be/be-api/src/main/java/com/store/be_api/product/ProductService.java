@@ -3,6 +3,7 @@ package com.store.be_api.product;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.store.be_api.product.dto.ProductDto;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,15 +29,22 @@ public class ProductService {
             .collect(Collectors.toList());
     }
 
-    public List<ProductDto> searchProducts(String search, List<String> brands, List<String> categories, Double minPrice, Double maxPrice) {
+    public List<ProductDto> searchProducts(String search, List<String> brands, List<String> categories, Double minPrice, Double maxPrice, String sort) {
         // Logic lọc tại Backend: Lấy tất cả và lọc bằng Stream (Cần tối ưu ở Repository sau này)
-        return productRepository.findAll().stream()
+        var stream = productRepository.findAll().stream()
             .filter(p -> (search == null || search.isBlank() || p.getName().toLowerCase().contains(search.toLowerCase())))
             .filter(p -> (brands == null || brands.isEmpty() || (p.getBrand() != null && brands.contains(p.getBrand().getName()))))
             .filter(p -> (categories == null || categories.isEmpty() || (p.getCategory() != null && categories.contains(p.getCategory().getName()))))
             .filter(p -> (minPrice == null || (p.getBasePrice() != null && p.getBasePrice().doubleValue() >= minPrice)))
-            .filter(p -> (maxPrice == null || (p.getBasePrice() != null && p.getBasePrice().doubleValue() <= maxPrice)))
-            .map(this::toDto)
+            .filter(p -> (maxPrice == null || (p.getBasePrice() != null && p.getBasePrice().doubleValue() <= maxPrice)));
+
+        if ("price-asc".equals(sort)) {
+            stream = stream.sorted(Comparator.comparing(p -> p.getBasePrice().doubleValue()));
+        } else if ("price-desc".equals(sort)) {
+            stream = stream.sorted(Comparator.comparing((Product p) -> p.getBasePrice().doubleValue()).reversed());
+        }
+
+        return stream.map(this::toDto)
             .collect(Collectors.toList());
     }
 

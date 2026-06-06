@@ -60,22 +60,27 @@ export const ProductsPage = () => {
     }
   }, [searchParams]);
 
-  // Định nghĩa hàm handleApplyFilters để cập nhật URL
-  const handleApplyFilters = () => {
+  // Hàm dùng chung để tạo URL mới và reload trang
+  const applyFiltersAndSort = (newSort?: string) => {
     const newParams = new URLSearchParams();
     filters.brands.forEach(b => newParams.append('brand', b));
     filters.categories?.forEach(c => newParams.append('category', c));
     if (filters.minPrice > 0) newParams.set('minPrice', filters.minPrice.toString());
     if (filters.maxPrice < 300000000) newParams.set('maxPrice', filters.maxPrice.toString());
     
-    // Giữ lại tham số search từ URL hiện tại nếu có
     const currentSearch = searchParams.get('search');
-    if (currentSearch) {
-      newParams.set('search', currentSearch);
-    }
+    if (currentSearch) newParams.set('search', currentSearch);
 
-    // Sử dụng window.location.search để buộc trình duyệt tải lại trang với các tham số mới
+    // Lấy sort từ tham số truyền vào hoặc từ URL hiện tại
+    const sortValue = newSort !== undefined ? newSort : searchParams.get('sort');
+    if (sortValue) newParams.set('sort', sortValue);
+
     window.location.search = newParams.toString();
+  };
+
+  // Định nghĩa hàm handleApplyFilters để cập nhật URL cho nút "LỌC SẢN PHẨM"
+  const handleApplyFilters = () => {
+    applyFiltersAndSort();
   };
 
   useEffect(() => {
@@ -271,11 +276,14 @@ export const ProductsPage = () => {
               <span className="text-sm text-slate-600">Hiển thị {products.length} sản phẩm</span>
               <div className="flex items-center gap-4">
                 <label className="text-sm text-slate-600 font-semibold">Sắp xếp theo:</label>
-                <select className="bg-transparent border-none text-sm text-slate-900 focus:ring-0 cursor-pointer">
-                  <option>Cao cấp: Mới nhất</option>
-                  <option>Giá: Cao đến Thấp</option>
-                  <option>Giá: Thấp đến Cao</option>
-                  <option>Phổ biến nhất</option>
+                <select 
+                  value={searchParams.get('sort') || 'popular'}
+                  onChange={(e) => applyFiltersAndSort(e.target.value)}
+                  className="bg-transparent border-none text-sm text-slate-900 focus:ring-0 cursor-pointer"
+                >
+                  <option value="popular">Phổ biến</option>
+                  <option value="price-asc">Giá: Thấp đến Cao</option>
+                  <option value="price-desc">Giá: Cao đến Thấp</option>
                 </select>
               </div>
             </div>

@@ -26,8 +26,9 @@ public class ProductController {
             @RequestParam(required = false) List<String> brand,
             @RequestParam(required = false) List<String> category,
             @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice) {
-        return productService.searchProducts(search, brand, category, minPrice, maxPrice);
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String sort) {
+        return productService.searchProducts(search, brand, category, minPrice, maxPrice, sort);
     }
 
     @GetMapping("/slug/{slug}")
