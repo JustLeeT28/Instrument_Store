@@ -1,34 +1,41 @@
 package com.store.be_api.product;
 
 import com.store.be_api.product.dto.ProductDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping({"/api/products", "/products"})
+@RequestMapping("/products")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ProductController {
+
     private final ProductService productService;
 
     @GetMapping
-    public List<ProductDto> list() {
+    public List<ProductDto> listAll() {
         return productService.listAll();
     }
 
-    @GetMapping("/{id}")
-    public ProductDto get(@PathVariable UUID id) {
-        return productService.getById(id);
+    @GetMapping("/search")
+    public List<ProductDto> search(
+            @RequestParam(required = false) List<String> brand,
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice) {
+        return productService.searchProducts(brand, category, minPrice, maxPrice);
     }
 
     @GetMapping("/slug/{slug}")
     public ProductDto getBySlug(@PathVariable String slug) {
         return productService.getBySlug(slug);
+    }
+
+    @GetMapping("/{id}")
+    public ProductDto getById(@PathVariable UUID id) {
+        return productService.getById(id);
     }
 }

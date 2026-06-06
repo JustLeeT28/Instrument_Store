@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { Categories } from '../components/Categories';
 import { API_BASE } from '../services/api';
@@ -6,8 +7,6 @@ import type { Product } from '../components/ProductCard';
 
 type ProductFilters = {
   brands: string[];
-  woodTypes: string[];
-  bodyTypes: string[];
   categories?: string[];
   minPrice: number;
   maxPrice: number;
@@ -21,50 +20,61 @@ type Brand = {
 };
 
 export const ProductsPage = () => {
+  const [searchParams] = useSearchParams();
+
   const [filters, setFilters] = useState<ProductFilters>({
-    brands: [],
-    woodTypes: ['Gỗ Vân sam'],
-    bodyTypes: [],
-    categories: [],
-    minPrice: 0,
-    maxPrice: 300000000,
+    brands: searchParams.getAll('brand'),
+    categories: searchParams.getAll('category'),
+    minPrice: Number(searchParams.get('minPrice')) || 0,
+    maxPrice: Number(searchParams.get('maxPrice')) || 300000000,
   });
+
   const [brands, setBrands] = useState<Brand[]>([]);
   const [brandLoading, setBrandLoading] = useState(true);
-
   const [products, setProducts] = useState<Product[]>([]);
 
+  // Hàm tải sản phẩm dựa trên tham số trên URL
+  const loadProductsFromUrl = useCallback(async () => {
+    try {
+      const hasParams = searchParams.toString().length > 0;
+      const url = hasParams 
+        ? `${API_BASE}/products/search?${searchParams.toString()}`
+        : `${API_BASE}/products`;
+
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('Failed to load products');
+      const data = await resp.json();
+      
+      setProducts(data.map((p: any) => ({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        brand: p.brand ?? p.category ?? 'Unknown',
+        price: p.price ?? 0,
+        image: p.image ?? 'https://via.placeholder.com/600x800?text=No+Image',
+        rating: p.rating ?? undefined,
+        badge: p.badge ?? undefined,
+      })));
+    } catch (error) {
+      console.error('Product fetch error:', error);
+    }
+  }, [searchParams]);
+
+  // Định nghĩa hàm handleApplyFilters để cập nhật URL
+  const handleApplyFilters = () => {
+    const newParams = new URLSearchParams();
+    filters.brands.forEach(b => newParams.append('brand', b));
+    filters.categories?.forEach(c => newParams.append('category', c));
+    if (filters.minPrice > 0) newParams.set('minPrice', filters.minPrice.toString());
+    if (filters.maxPrice < 300000000) newParams.set('maxPrice', filters.maxPrice.toString());
+    
+    // Sử dụng window.location.search để buộc trình duyệt tải lại trang với các tham số mới
+    window.location.search = newParams.toString();
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    const loadProducts = async () => {
-      try {
-        const resp = await fetch(`${API_BASE}/products`);
-        if (!resp.ok) throw new Error('Failed to load products');
-        const data = await resp.json();
-        if (isMounted) {
-          // Map backend shape to Product interface if needed
-          const mapped: Product[] = data.map((p: any) => ({
-            id: p.id,
-            slug: p.slug,
-            name: p.name,
-            brand: p.brand ?? p.category ?? 'Unknown',
-            price: p.price ?? 0,
-            image: p.image ?? 'https://via.placeholder.com/600x800?text=No+Image',
-            rating: p.rating ?? undefined,
-            badge: p.badge ?? undefined,
-          }));
-          setProducts(mapped);
-        }
-      } catch (error) {
-        console.error('Product fetch error:', error);
-      }
-    };
-
-    loadProducts();
-
-    return () => { isMounted = false; };
-  }, []);
+    loadProductsFromUrl();
+  }, [loadProductsFromUrl]);
 
   useEffect(() => {
     let isMounted = true;
@@ -102,13 +112,6 @@ export const ProductsPage = () => {
       ? brands.map((brand) => brand.name ?? brand.band ?? brand.slug ?? '')
       : productBrands;
 
-  const filteredProducts = products.filter((product) =>
-    (filters.brands.length === 0 || filters.brands.includes(product.brand)) &&
-    // Nếu giá sản phẩm đã là VNĐ, so sánh trực tiếp không cần chia tỷ giá
-    product.price >= filters.minPrice && 
-    product.price <= filters.maxPrice
-  );
-
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 py-12 md:py-20">
@@ -126,6 +129,15 @@ export const ProductsPage = () => {
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-72 flex-shrink-0">
             <div className="space-y-8 lg:sticky lg:top-32">
+              {/* Nút lọc kích hoạt gọi API Backend */}
+              <button 
+                onClick={handleApplyFilters}
+                className="w-full bg-slate-900 text-white font-bold py-4 rounded-lg hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
+              >
+                <span className="material-symbols-outlined">filter_alt</span>
+                LỌC SẢN PHẨM
+              </button>
+
               {/* Categories */}
               <div>
                 <Categories
@@ -243,57 +255,6 @@ export const ProductsPage = () => {
                   </div>
                 </div>
               </div>
-              
-              {/* Wood Type */}
-              <div>
-                <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Loại gỗ</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['Gỗ Gụ', 'Gỗ Hồng sắc', 'Gỗ Vân sam', 'Gỗ Tuyết tùng', 'Gỗ Koa'].map((wood) => (
-                    <span
-                      key={wood}
-                      onClick={() => {
-                        setFilters({
-                          ...filters,
-                          woodTypes: filters.woodTypes.includes(wood)
-                            ? filters.woodTypes.filter((w) => w !== wood)
-                            : [...filters.woodTypes, wood],
-                        });
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                        filters.woodTypes.includes(wood)
-                          ? 'bg-amber-600 text-white'
-                          : 'bg-slate-100 text-slate-900 hover:bg-amber-600 hover:text-white'
-                      }`}
-                    >
-                      {wood}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Body Type */}
-              <div>
-                <h3 className="text-xs font-semibold text-slate-600 uppercase mb-4">Hình dáng</h3>
-                <div className="space-y-3">
-                  {['Dreadnought', 'Grand Auditorium', 'Parlor'].map((type) => (
-                    <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="body"
-                        checked={filters.bodyTypes.includes(type)}
-                        onChange={() => {
-                          setFilters({
-                            ...filters,
-                            bodyTypes: filters.bodyTypes.includes(type) ? [] : [type],
-                          });
-                        }}
-                        className="w-4 h-4 border-slate-300 text-amber-600 focus:ring-amber-500/20"
-                      />
-                      <span className="text-sm text-slate-900 group-hover:text-amber-600 transition-colors">{type}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
             </div>
           </aside>
 
@@ -301,7 +262,7 @@ export const ProductsPage = () => {
           <section className="flex-1">
             {/* Sort Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-slate-200 pb-4">
-              <span className="text-sm text-slate-600">Hiển thị {filteredProducts.length} trong số {products.length} Đàn Guitar</span>
+              <span className="text-sm text-slate-600">Hiển thị {products.length} sản phẩm</span>
               <div className="flex items-center gap-4">
                 <label className="text-sm text-slate-600 font-semibold">Sắp xếp theo:</label>
                 <select className="bg-transparent border-none text-sm text-slate-900 focus:ring-0 cursor-pointer">
@@ -315,7 +276,7 @@ export const ProductsPage = () => {
 
             {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

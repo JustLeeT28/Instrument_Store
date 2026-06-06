@@ -11,10 +11,12 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProductService {
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
@@ -23,6 +25,17 @@ public class ProductService {
 
     public List<ProductDto> listAll() {
         return productRepository.findAll().stream().map(this::toDto)
+            .collect(Collectors.toList());
+    }
+
+    public List<ProductDto> searchProducts(List<String> brands, List<String> categories, Double minPrice, Double maxPrice) {
+        // Logic lọc tại Backend: Lấy tất cả và lọc bằng Stream (Cần tối ưu ở Repository sau này)
+        return productRepository.findAll().stream()
+            .filter(p -> (brands == null || brands.isEmpty() || (p.getBrand() != null && brands.contains(p.getBrand().getName()))))
+            .filter(p -> (categories == null || categories.isEmpty() || (p.getCategory() != null && categories.contains(p.getCategory().getName()))))
+            .filter(p -> (minPrice == null || (p.getBasePrice() != null && p.getBasePrice().doubleValue() >= minPrice)))
+            .filter(p -> (maxPrice == null || (p.getBasePrice() != null && p.getBasePrice().doubleValue() <= maxPrice)))
+            .map(this::toDto)
             .collect(Collectors.toList());
     }
 
