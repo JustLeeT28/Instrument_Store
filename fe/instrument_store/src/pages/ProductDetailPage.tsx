@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE } from '../services/api';
 import { isAuthenticated } from '../services/auth';
+import { addFavorite, fetchFavoriteStatus, removeFavorite } from '../services/favorites';
 
 export const ProductDetailPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -19,6 +23,14 @@ export const ProductDetailPage = () => {
         if (!resp.ok) throw new Error('Product not found');
         const data = await resp.json();
         if (mounted) setProduct(data);
+
+        if (mounted && isAuthenticated()) {
+          try {
+            setIsFavorite(await fetchFavoriteStatus(data.id));
+          } catch (favoriteStatusError) {
+            console.error('Failed to load favorite status', favoriteStatusError);
+          }
+        }
       } catch (e) {
         console.error('Failed to load product', e);
       } finally {
@@ -29,10 +41,30 @@ export const ProductDetailPage = () => {
     return () => { mounted = false; };
   }, [slug]);
 
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = async () => {
     if (!isAuthenticated()) {
       navigate('/login');
       return;
+    }
+
+    if (!product?.id || favoriteLoading) return;
+
+    const nextFavorite = !isFavorite;
+    setIsFavorite(nextFavorite);
+    setFavoriteLoading(true);
+    setFavoriteError(null);
+
+    try {
+      if (nextFavorite) {
+        await addFavorite(product.id);
+      } else {
+        await removeFavorite(product.id);
+      }
+    } catch (err) {
+      setIsFavorite(!nextFavorite);
+      setFavoriteError(err instanceof Error ? err.message : 'Khong cap nhat duoc yeu thich');
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -111,11 +143,20 @@ export const ProductDetailPage = () => {
                 </button>
                 <button 
                   onClick={handleFavoriteClick}
-                  className="px-6 border-2 border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98] flex items-center justify-center"
+                  disabled={favoriteLoading}
+                  className={`px-6 border-2 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-60 ${
+                    isFavorite
+                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                      : 'border-slate-300 text-slate-900 hover:bg-slate-50'
+                  }`}
+                  aria-label={isFavorite ? 'Xoa khoi danh sach yeu thich' : 'Them vao danh sach yeu thich'}
                 >
-                  <span className="material-symbols-outlined">favorite</span>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : undefined }}>
+                    favorite
+                  </span>
                 </button>
               </div>
+              {favoriteError && <p className="text-center text-xs text-red-600">{favoriteError}</p>}
               <p className="text-center text-xs text-slate-600 flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-sm">local_shipping</span> Miễn phí Vận chuyển Toàn cầu & Bảo hiểm
               </p>
