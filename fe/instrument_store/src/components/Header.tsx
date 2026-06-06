@@ -80,23 +80,23 @@ export const Header = () => {
               setHoveredItem(null);
             }}
           >
-            <button className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
+              <a href="/products" className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
               hoveredMenu === 'products'
                 ? 'bg-amber-900/40 text-amber-400'
                 : 'text-gray-300 hover:text-white'
             }`}>
               Sản phẩm
               <span className={`material-symbols-outlined text-lg transition-transform duration-200 ${hoveredMenu === 'products' ? 'rotate-180' : ''}`}>expand_more</span>
-            </button>
+              </a>
             {hoveredMenu === 'products' && (
               <div className="dropdown-menu absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-xl shadow-xl py-3 w-56 z-50">
                 {productLoading ? (
                   <div className="px-4 py-3 text-sm text-slate-500">Đang tải...</div>
                 ) : (
                   productCategories.map((category) => (
-                    <Link
+                    <a
                       key={category.id}
-                      to={`/products?category=${category.slug ?? ''}`}
+                      href={`/products?category=${encodeURIComponent(category.name)}`}
                       onMouseEnter={() => setHoveredItem(category.name)}
                       onMouseLeave={() => setHoveredItem(null)}
                       className={`block px-4 py-3 transition-all duration-150 border-l-3 ${
@@ -106,7 +106,7 @@ export const Header = () => {
                       }`}
                     >
                       {category.name}
-                    </Link>
+                    </a>
                   ))
                 )}
               </div>
