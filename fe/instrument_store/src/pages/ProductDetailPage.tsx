@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE } from '../services/api';
+import { isAuthenticated } from '../services/auth';
 
 export const ProductDetailPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,6 +28,13 @@ export const ProductDetailPage = () => {
     load();
     return () => { mounted = false; };
   }, [slug]);
+
+  const handleFavoriteClick = () => {
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+  };
 
   if (loading) return <div className="p-8">Đang tải...</div>;
   if (!product) return <div className="p-8">Sản phẩm không tồn tại.</div>;
@@ -100,7 +109,10 @@ export const ProductDetailPage = () => {
                   <span className="material-symbols-outlined">shopping_bag</span>
                   <span>Thêm vào giỏ hàng</span>
                 </button>
-                <button className="px-6 border-2 border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98] flex items-center justify-center">
+                <button 
+                  onClick={handleFavoriteClick}
+                  className="px-6 border-2 border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98] flex items-center justify-center"
+                >
                   <span className="material-symbols-outlined">favorite</span>
                 </button>
               </div>
