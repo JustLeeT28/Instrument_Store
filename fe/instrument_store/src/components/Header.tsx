@@ -9,6 +9,15 @@ export const Header = () => {
   const initialCategories = getCachedCategories();
   const [productCategories, setProductCategories] = useState<Category[]>(initialCategories);
   const [productLoading, setProductLoading] = useState(() => initialCategories.length === 0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      // Thực hiện load lại trang và truyền tham số search lên URL
+      window.location.href = `/products?search=${encodeURIComponent(searchQuery.trim())}`;
+    }
+  };
+
   const courseCategories = ['Guitar', 'Violin', 'Piano', 'Trống'];
 
   useEffect(() => {
@@ -153,6 +162,9 @@ export const Header = () => {
             <input
               type="text"
               placeholder="Tìm kiếm nhạc cụ..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
               className="pl-4 pr-10 py-2 bg-white border-none rounded-full text-sm text-slate-900 placeholder-gray-500 focus:ring-1 focus:ring-amber-500 w-64 transition-all"
             />
             <span className="material-symbols-outlined absolute right-3 top-2 text-slate-400 text-xl">search</span>

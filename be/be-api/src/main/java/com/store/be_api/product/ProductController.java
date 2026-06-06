@@ -22,11 +22,12 @@ public class ProductController {
 
     @GetMapping("/search")
     public List<ProductDto> search(
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) List<String> brand,
             @RequestParam(required = false) List<String> category,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice) {
-        return productService.searchProducts(brand, category, minPrice, maxPrice);
+        return productService.searchProducts(search, brand, category, minPrice, maxPrice);
     }
 
     @GetMapping("/slug/{slug}")

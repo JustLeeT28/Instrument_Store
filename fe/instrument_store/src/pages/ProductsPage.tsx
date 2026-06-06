@@ -68,6 +68,12 @@ export const ProductsPage = () => {
     if (filters.minPrice > 0) newParams.set('minPrice', filters.minPrice.toString());
     if (filters.maxPrice < 300000000) newParams.set('maxPrice', filters.maxPrice.toString());
     
+    // Giữ lại tham số search từ URL hiện tại nếu có
+    const currentSearch = searchParams.get('search');
+    if (currentSearch) {
+      newParams.set('search', currentSearch);
+    }
+
     // Sử dụng window.location.search để buộc trình duyệt tải lại trang với các tham số mới
     window.location.search = newParams.toString();
   };

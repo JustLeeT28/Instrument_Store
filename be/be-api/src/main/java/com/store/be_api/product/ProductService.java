@@ -28,9 +28,10 @@ public class ProductService {
             .collect(Collectors.toList());
     }
 
-    public List<ProductDto> searchProducts(List<String> brands, List<String> categories, Double minPrice, Double maxPrice) {
+    public List<ProductDto> searchProducts(String search, List<String> brands, List<String> categories, Double minPrice, Double maxPrice) {
         // Logic lọc tại Backend: Lấy tất cả và lọc bằng Stream (Cần tối ưu ở Repository sau này)
         return productRepository.findAll().stream()
+            .filter(p -> (search == null || search.isBlank() || p.getName().toLowerCase().contains(search.toLowerCase())))
             .filter(p -> (brands == null || brands.isEmpty() || (p.getBrand() != null && brands.contains(p.getBrand().getName()))))
             .filter(p -> (categories == null || categories.isEmpty() || (p.getCategory() != null && categories.contains(p.getCategory().getName()))))
             .filter(p -> (minPrice == null || (p.getBasePrice() != null && p.getBasePrice().doubleValue() >= minPrice)))
