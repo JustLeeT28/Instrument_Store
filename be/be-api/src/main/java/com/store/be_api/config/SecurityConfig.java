@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/error").permitAll()
+                .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**", "/api/products", "/api/products/**", "/products", "/products/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
