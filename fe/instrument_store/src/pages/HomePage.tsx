@@ -1,44 +1,48 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
+import { API_BASE } from '../services/api';
 import type { Product } from '../components/ProductCard';
 
+const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/600x800?text=No+Image';
+
 export const HomePage = () => {
-  const featuredProducts: Product[] = [
-    {
-      id: '1',
-      name: 'D-28 Modern Deluxe',
-      brand: 'Martin & Co.',
-      price: 3999,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDhklimPm47pgr1mkBVowHdoogFz4Y7Rz1vxJCi5tKlTD9XMqA6F_4ofpbJzYbFaey8aRaSAzIX3YViGUXtwfZePZ1fmucnwr6N0FGKdsiaYzPy1B3SJTOsaI25Tsjq24C844gtgNegn8zVC65kbdPX5GPhdGKvmmIxQ_fmuNLAu13kcXj1W2pzRPJ86NbpGHvkiFFhigl76DmIuvLfB6Tj522IhF4upyA82FwqavoF7i7OPshIgMcp1e1C2n6eNgUKd5aIlAL_trdV',
-      badge: 'HÀNG MỚI VỀ',
-    },
-    {
-      id: '2',
-      name: 'Model K-52 Upright',
-      brand: 'Steinway & Sons',
-      price: 42500,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHDZvxU4mBWHylJydE80uJd5Im2ZG725cpY3YktzS27wyHimUO3lSVoTaJKEgx_JvGOoIiFVVgwxkjXVsZQquUaNk3QAMhU7pq2224egZc3PSDIQveEKUQ6-ne15RQJxsm5FUm08q7-UBzaep2CA3s9PWiphWBUcb_ZPWmTLcp6OXAtnH-z2Y6yqTldj-EzLeQgkrXAGuSHDU_qR-2c5ETPlnU0ikr7D5TLMtkggb0n36Uew8Ej7RvL052VfinZ_ETEo1yMgdP95Nx',
-    },
-    {
-      id: '3',
-      name: 'ES-335 Figured',
-      brand: 'Gibson Custom Shop',
-      price: 4299,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCSRy952QJvM9LjOMQOaf32y1mlaHO4EJmNXE0VsXfYIqHE2ChZnMMXNeRcFaFzvHzLpDQa6jrjMeVjq6JBzEsYHtq_OPHhlR0Rh2a1pxfJPay-ynIn329n-fmcI17AXRkaNSxLPXJmATCRyqfEoZ9PfnsQvc-3DEtWPOJeXNFvzCoYYcnfxOJf47qdgfMhhhkqW29KMS9wEZMw9Kl1LtrVILPsgZvyrdHgsTtdnL_9OkZRo27NBR6KfnbyFVYoIjC4nC-sF-7xqNCI',
-      badge: 'PHIÊN BẢN CỔ ĐIỂN',
-    },
-    {
-      id: '4',
-      name: 'Cremona Professional',
-      brand: 'Stentor',
-      price: 2150,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtPSa8f1Rro2kUJXTpX7zGnhnnvV4Kk1kyWBWCvd3gbDJwfidALdpZwZpaDGItE1kjr5vi7Z2VuUvbWvKxZOqTh7VVfiq1YbyvuoOgDOLlZTGzDi0bq8hijt54-mXwnHzfe0sTx0_fL_Gf23wtalKq22hB67drAda9hfidAq_aYakF_ADXbFIxD6Kg0zOPaeOmUKSYxZKhDkGWp16rYgiRJdUy0GOZMmINwTlRMr5UTDsJrZ9ttCGYTgijZ1shUt_f02sLf_czcDp5',
-    },
-  ];
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadFeaturedProducts = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/products`);
+        if (!response.ok) throw new Error('Failed to load featured products');
+        const data = await response.json();
+
+        const products = data.slice(0, 4).map((p: any) => ({
+          id: p.id,
+          slug: p.slug,
+          name: p.name,
+          brand: p.brand ?? p.category ?? 'Unknown',
+          price: p.price ?? 0,
+          image: p.image ?? p.images?.[0] ?? PLACEHOLDER_IMAGE,
+          images: Array.isArray(p.images) ? p.images : [],
+          rating: p.rating ?? undefined,
+          badge: p.badge ?? undefined,
+        }));
+
+        if (mounted) setFeaturedProducts(products);
+      } catch (error) {
+        console.error('Featured products fetch error:', error);
+      }
+    };
+
+    loadFeaturedProducts();
+
+    return () => { mounted = false; };
+  }, []);
 
   return (
-  <div className="min-h-screen bg-white w-full md:max-w-[80vw] md:mx-auto">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-white w-full md:max-w-[80vw] md:mx-auto">
       <section className="relative min-h-[620px] md:min-h-[921px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
@@ -46,7 +50,7 @@ export const HomePage = () => {
             className="w-full h-full object-cover"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiThRslBqsnD1uMVOa8YEcNsHf5QLGdLVYSrAv44uP3YkQnJmdtQIcrETOV8e_s5-Pzzl3TB6NNNafIQJgIvY_dyy8C4v-kfvIRlbt3Rn2j3aij4Dzj1dvyinotBHPIz_qAckPfN6NaedIgs3RBO6nf23N_32lNbc1SRA-CoASpe5ZyQp6NRv3Kx-Ww_i_TZKp5Gw4ON-IxoW2GcMKe20dFany7JQuDXAddm9aCZ005lmoK37rSADJubbk72K-CRtlE73B1AzfARe7"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-16 relative z-10">
@@ -58,12 +62,15 @@ export const HomePage = () => {
             </h1>
             <p className="text-base md:text-lg text-slate-700 max-w-lg leading-relaxed">
               Từ năm 1924, Luthier & Co. đã đứng tại điểm giao thoa giữa nghề mộc truyền thống và khoa học âm học hiện đại.
-              Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ—nó là một thực thể sống hoàn thiện dần theo thời gian.
+              Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ, nó là một thực thể sống hoàn thiện dần theo thời gian.
             </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 pt-2 md:pt-4">
-              <button className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800 transition-colors active:scale-[0.98]">
+              <Link
+                to="/products"
+                className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800 transition-colors active:scale-[0.98] text-center"
+              >
                 Khám phá Bộ sưu tập
-              </button>
+              </Link>
               <button className="px-8 md:px-10 py-4 md:py-5 border-2 border-slate-900 text-slate-900 font-semibold rounded hover:bg-slate-900 hover:text-white transition-colors active:scale-[0.98]">
                 Xưởng chế tác
               </button>
@@ -72,8 +79,6 @@ export const HomePage = () => {
         </div>
       </section>
 
-
-      {/* Featured Instruments */}
       <section className="py-16 md:py-20 bg-slate-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-16">
           <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-10 md:mb-12">
@@ -89,15 +94,22 @@ export const HomePage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="aspect-[3/4] animate-pulse bg-slate-200" />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Craftsmanship Story Section */}
       <section className="py-16 md:py-20 overflow-hidden bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -120,18 +132,17 @@ export const HomePage = () => {
               <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
                 Nghệ thuật của <br /> Nhạc cụ Tinh xảo
               </h2>
-              <div className="w-16 h-1 bg-slate-900"></div>
+              <div className="w-16 h-1 bg-slate-900" />
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
                 Từ năm 1924, Luthier & Co. đã đứng tại điểm giao thoa giữa nghề mộc truyền thống và khoa học âm học hiện đại.
-                Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ—nó là một thực thể sống hoàn thiện dần theo thời gian.
+                Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ, nó là một thực thể sống hoàn thiện dần theo thời gian.
               </p>
               <p className="text-base text-slate-700 leading-relaxed">
                 Các nhạc cụ của chúng tôi được chế tác từ những loại gỗ âm sắc được khai thác có trách nhiệm, được sấy khô trong nhiều thập kỷ
-                để đảm bảo độ cộng hưởng tối ưu. Mỗi đường cong, mỗi thanh giằng và mỗi lớp hoàn thiện đều được thực hiện với sự tỉ mỉ
-                không khoan nhượng. Khi bạn chơi một nhạc cụ của Luthier & Co., bạn đang tiếp nối một thế kỷ lịch sử âm nhạc.
+                để đảm bảo độ cộng hưởng tối ưu.
               </p>
               <button className="flex items-center gap-4 group hover:gap-6 transition-all">
-                <span className="w-12 h-[1.5px] bg-slate-900 group-hover:w-20 transition-all"></span>
+                <span className="w-12 h-[1.5px] bg-slate-900 group-hover:w-20 transition-all" />
                 <span className="font-semibold text-slate-900 uppercase tracking-widest text-sm">KHÁM PHÁ QUY TRÌNH</span>
               </button>
             </div>
@@ -139,7 +150,6 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Newsletter Section */}
       <section className="py-16 md:py-20 bg-slate-100 border-y border-slate-300">
         <div className="container mx-auto px-4 sm:px-6 lg:px-16 text-center max-w-4xl">
           <span className="material-symbols-outlined text-4xl text-amber-600 mb-6 inline-block">auto_awesome</span>

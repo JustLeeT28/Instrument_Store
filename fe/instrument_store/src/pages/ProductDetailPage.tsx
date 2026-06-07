@@ -4,10 +4,13 @@ import { API_BASE } from '../services/api';
 import { isAuthenticated } from '../services/auth';
 import { addFavorite, fetchFavoriteStatus, removeFavorite } from '../services/favorites';
 
+const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/600x800?text=No+Image';
+
 export const ProductDetailPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<any | null>(null);
+  const [selectedImage, setSelectedImage] = useState(PLACEHOLDER_IMAGE);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
@@ -22,7 +25,13 @@ export const ProductDetailPage = () => {
         const resp = await fetch(`${API_BASE}/products/slug/${encodeURIComponent(slug)}`);
         if (!resp.ok) throw new Error('Product not found');
         const data = await resp.json();
-        if (mounted) setProduct(data);
+        const images = Array.isArray(data.images) && data.images.length > 0
+          ? data.images
+          : [data.image ?? PLACEHOLDER_IMAGE];
+        if (mounted) {
+          setProduct({ ...data, image: data.image ?? images[0], images });
+          setSelectedImage(data.image ?? images[0]);
+        }
 
         if (mounted && isAuthenticated()) {
           try {
@@ -71,6 +80,10 @@ export const ProductDetailPage = () => {
   if (loading) return <div className="p-8">Đang tải...</div>;
   if (!product) return <div className="p-8">Sản phẩm không tồn tại.</div>;
 
+  const productImages = Array.isArray(product.images) && product.images.length > 0
+    ? product.images
+    : [product.image ?? PLACEHOLDER_IMAGE];
+
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 py-12 md:py-20">
@@ -94,10 +107,23 @@ export const ProductDetailPage = () => {
               <div className="col-span-2 aspect-[4/5] bg-slate-100 rounded-lg overflow-hidden group">
                 <img
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  src={product.image ?? 'https://via.placeholder.com/600x800?text=No+Image'}
+                  src={selectedImage}
                   alt={product.name}
                 />
               </div>
+              {productImages.length > 1 && productImages.map((image: string, index: number) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedImage(image)}
+                  className={`aspect-[4/3] overflow-hidden rounded-lg border bg-slate-100 ${
+                    selectedImage === image ? 'border-amber-600 ring-2 ring-amber-600/20' : 'border-slate-200'
+                  }`}
+                  aria-label={`Xem anh san pham ${index + 1}`}
+                >
+                  <img className="h-full w-full object-cover" src={image} alt={`${product.name} ${index + 1}`} />
+                </button>
+              ))}
             </div>
           </div>
 

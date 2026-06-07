@@ -7,6 +7,7 @@ export interface Product {
   brand: string;
   price: number;
   image: string;
+  images?: string[];
   rating?: number;
   badge?: string;
 }
