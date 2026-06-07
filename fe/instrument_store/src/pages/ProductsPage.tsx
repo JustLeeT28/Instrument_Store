@@ -129,16 +129,6 @@ export const ProductsPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-16 py-12 md:py-20">
-        {/* Hero Section */}
-        <header className="mb-12 max-w-3xl">
-          <h1 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">Đàn Guitar Acoustic</h1>
-          <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-            Từ độ trầm ấm vang dội của gỗ Sitka Spruce lâu năm đến những nốt cao trong trẻo của gỗ Koa thượng hạng,
-            bộ sưu tập của chúng tôi đại diện cho đỉnh cao của nghệ thuật chế tác đàn. Mỗi nhạc cụ đều được tuyển
-            chọn thủ công vì âm thanh độc bản, kết cấu vững chãi và linh hồn mà nó mang lại.
-          </p>
-        </header>
-
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-72 flex-shrink-0">

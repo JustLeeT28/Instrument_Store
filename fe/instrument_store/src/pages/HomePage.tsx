@@ -6,6 +6,12 @@ import type { Product } from '../components/ProductCard';
 
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/600x800?text=No+Image';
 
+const storeBenefits = [
+  { title: 'Sản phẩm chọn lọc', text: 'Nhạc cụ từ các thương hiệu uy tín, có thông tin rõ ràng.' },
+  { title: 'Tư vấn theo nhu cầu', text: 'Chọn đàn học tập, biểu diễn hoặc phòng thu theo ngân sách.' },
+  { title: 'Giao hàng toàn quốc', text: 'Đóng gói cẩn thận, hỗ trợ kiểm tra khi nhận hàng.' },
+];
+
 export const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
 
@@ -43,39 +49,50 @@ export const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white w-full md:max-w-[80vw] md:mx-auto">
-      <section className="relative min-h-[620px] md:min-h-[921px] flex items-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            alt="A masterfully crafted acoustic guitar in a high-end woodshop"
-            className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiThRslBqsnD1uMVOa8YEcNsHf5QLGdLVYSrAv44uP3YkQnJmdtQIcrETOV8e_s5-Pzzl3TB6NNNafIQJgIvY_dyy8C4v-kfvIRlbt3Rn2j3aij4Dzj1dvyinotBHPIz_qAckPfN6NaedIgs3RBO6nf23N_32lNbc1SRA-CoASpe5ZyQp6NRv3Kx-Ww_i_TZKp5Gw4ON-IxoW2GcMKe20dFany7JQuDXAddm9aCZ005lmoK37rSADJubbk72K-CRtlE73B1AzfARe7"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
-        </div>
-
-        <div className="container mx-auto px-4 sm:px-6 lg:px-16 relative z-10">
-          <div className="max-w-2xl space-y-6 md:space-y-8">
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-[0.3em]">CÂU CHUYỆN CỦA CHÚNG TÔI</span>
-            <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight">
-              Linh hồn của một <br />
-              <span className="italic text-amber-700">Kiệt tác</span>.
+      <section className="relative min-h-[560px] md:min-h-[680px] overflow-hidden">
+        <img
+          alt="Cửa hàng nhạc cụ với guitar, piano và thiết bị âm nhạc"
+          className="absolute inset-0 h-full w-full object-cover"
+          src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=1800&q=85"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/20" />
+        <div className="relative z-10 mx-auto flex min-h-[560px] max-w-screen-2xl items-center px-4 py-20 sm:px-6 lg:min-h-[680px] lg:px-16">
+          <div className="max-w-2xl">
+            <span className="text-xs font-bold uppercase tracking-[0.3em] text-amber-600">Cửa hàng nhạc cụ</span>
+            <h1 className="mt-5 text-4xl font-bold leading-tight text-slate-950 md:text-6xl">
+              Tìm nhạc cụ phù hợp cho cách bạn chơi.
             </h1>
-            <p className="text-base md:text-lg text-slate-700 max-w-lg leading-relaxed">
-              Từ năm 1924, Luthier & Co. đã đứng tại điểm giao thoa giữa nghề mộc truyền thống và khoa học âm học hiện đại.
-              Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ, nó là một thực thể sống hoàn thiện dần theo thời gian.
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-700 md:text-lg">
+              Mua guitar, piano, violin và phụ kiện âm nhạc với hình ảnh sản phẩm rõ ràng, giá minh bạch và tư vấn theo nhu cầu sử dụng.
             </p>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 pt-2 md:pt-4">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/products"
-                className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800 transition-colors active:scale-[0.98] text-center"
+                className="inline-flex items-center justify-center gap-2 rounded bg-slate-950 px-7 py-4 font-semibold text-white transition-colors hover:bg-amber-600"
               >
-                Khám phá Bộ sưu tập
+                <span className="material-symbols-outlined text-xl">storefront</span>
+                Xem sản phẩm
               </Link>
-              <button className="px-8 md:px-10 py-4 md:py-5 border-2 border-slate-900 text-slate-900 font-semibold rounded hover:bg-slate-900 hover:text-white transition-colors active:scale-[0.98]">
-                Xưởng chế tác
-              </button>
+              <Link
+                to="/products?sort=price-asc"
+                className="inline-flex items-center justify-center gap-2 rounded border-2 border-slate-950 px-7 py-4 font-semibold text-slate-950 transition-colors hover:bg-slate-950 hover:text-white"
+              >
+                <span className="material-symbols-outlined text-xl">sell</span>
+                Mua theo ngân sách
+              </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-200 bg-white">
+        <div className="mx-auto grid max-w-screen-2xl grid-cols-1 divide-y divide-slate-200 px-4 sm:px-6 md:grid-cols-3 md:divide-x md:divide-y-0 lg:px-16">
+          {storeBenefits.map((item) => (
+            <div key={item.title} className="py-6 md:px-8">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-950">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.text}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -115,36 +132,34 @@ export const HomePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="relative">
               <img
-                alt="Master luthier crafting a guitar neck"
+                alt="Bộ sưu tập nhạc cụ được trưng bày trong cửa hàng"
                 className="w-full h-[420px] md:h-[520px] lg:h-[600px] object-cover shadow-2xl"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPPOG9If11Yrv-2k2_fHnpa8uqp5l1KJHDrQqMLQsaAiVm2uxU0fa9PjmGtbquwQvS0QZ9zhqXOvn2rdJP1gFRCE2ApREk4kbRoMe2TEUW4VvC0cTZdcYcFZtpzrw0hzRCec7jKUcdwzGeA2yvnKq8tThwf98Z-cXdYHli-tqNLnLsEX4reZFJh2ayhB8L-JShIX5WmWTujgCzCM65P_t2mZSOYmXUVK6wUExq6AWtLoUHii6jaJDvtYQH6qhZGeOUuHrrAWiWpo9f"
+                src="https://images.unsplash.com/photo-1525201548942-d8732f6617a0?auto=format&fit=crop&w=1400&q=85"
               />
               <div className="absolute -bottom-6 md:-bottom-10 right-4 md:-right-10 bg-white p-6 md:p-12 max-w-xs border border-slate-200 shadow-lg">
                 <p className="text-2xl italic text-slate-900 leading-tight mb-4">
-                  "Âm thanh không chỉ để nghe, mà còn để cảm nhận qua đôi tay của những người tạo hình nên nó."
+                  "Một nhạc cụ phù hợp giúp việc luyện tập và biểu diễn trở nên tự nhiên hơn."
                 </p>
-                <p className="text-xs text-amber-700 mt-4 uppercase font-semibold">ELIAS VANCE, NGHỆ NHÂN CHẾ TÁC BẬC THẦY</p>
+                <p className="text-xs text-amber-700 mt-4 uppercase font-semibold">INSTRUMENT STORE</p>
               </div>
             </div>
 
             <div className="space-y-6 md:space-y-8 lg:pl-12">
-              <span className="text-xs font-bold text-amber-600 uppercase tracking-[0.2em]">CÂU CHUYỆN CỦA CHÚNG TÔI</span>
+              <span className="text-xs font-bold text-amber-600 uppercase tracking-[0.2em]">CỬA HÀNG CỦA CHÚNG TÔI</span>
               <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
-                Nghệ thuật của <br /> Nhạc cụ Tinh xảo
+                Không gian chọn mua <br /> nhạc cụ đáng tin cậy
               </h2>
               <div className="w-16 h-1 bg-slate-900" />
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-                Từ năm 1924, Luthier & Co. đã đứng tại điểm giao thoa giữa nghề mộc truyền thống và khoa học âm học hiện đại.
-                Chúng tôi tin rằng một nhạc cụ thực thụ không chỉ là một công cụ, nó là một thực thể sống hoàn thiện dần theo thời gian.
+                Chúng tôi tập trung vào những sản phẩm có thông tin rõ ràng, hình ảnh thực tế và mức giá dễ so sánh để bạn chọn được nhạc cụ phù hợp.
               </p>
               <p className="text-base text-slate-700 leading-relaxed">
-                Các nhạc cụ của chúng tôi được chế tác từ những loại gỗ âm sắc được khai thác có trách nhiệm, được sấy khô trong nhiều thập kỷ
-                để đảm bảo độ cộng hưởng tối ưu.
+                Dù bạn mới bắt đầu học đàn hay đang tìm một nhạc cụ để biểu diễn, cửa hàng luôn ưu tiên trải nghiệm mua sắm rõ ràng, dễ tra cứu và thuận tiện.
               </p>
-              <button className="flex items-center gap-4 group hover:gap-6 transition-all">
+              <Link to="/products" className="flex items-center gap-4 group hover:gap-6 transition-all">
                 <span className="w-12 h-[1.5px] bg-slate-900 group-hover:w-20 transition-all" />
-                <span className="font-semibold text-slate-900 uppercase tracking-widest text-sm">KHÁM PHÁ QUY TRÌNH</span>
-              </button>
+                <span className="font-semibold text-slate-900 uppercase tracking-widest text-sm">KHÁM PHÁ SẢN PHẨM</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -153,10 +168,9 @@ export const HomePage = () => {
       <section className="py-16 md:py-20 bg-slate-100 border-y border-slate-300">
         <div className="container mx-auto px-4 sm:px-6 lg:px-16 text-center max-w-4xl">
           <span className="material-symbols-outlined text-4xl text-amber-600 mb-6 inline-block">auto_awesome</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Tham gia Cộng đồng Người sành sỏi</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Nhận thông tin sản phẩm mới</h2>
           <p className="text-base md:text-lg text-slate-700 mb-8 leading-relaxed">
-            Nhận lời mời độc quyền tới các sự kiện trưng bày riêng tư, quyền tiếp cận sớm các phiên bản tùy chỉnh hiếm có
-            và những kiến thức chuyên sâu từ các nghệ nhân bậc thầy của chúng tôi.
+            Theo dõi các mẫu nhạc cụ mới, chương trình ưu đãi và gợi ý chọn sản phẩm từ cửa hàng.
           </p>
           <form className="flex flex-col sm:flex-row max-w-2xl mx-auto gap-4">
             <input
