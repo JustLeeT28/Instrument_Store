@@ -42,6 +42,18 @@ export interface CurrentUser {
   } | null;
 }
 
+export interface UpdateUserData {
+  email?: string;
+  fullName?: string;
+  phone?: string;
+  address?: {
+    line1?: string;
+    city?: string;
+    ward?: string;
+    defaultAddress?: boolean;
+  };
+}
+
 async function readErrorMessage(res: Response) {
   const text = await res.text();
 
@@ -92,6 +104,20 @@ export async function login(data: LoginData) {
 export async function fetchCurrentUser(): Promise<CurrentUser> {
   const res = await fetch(`${API_BASE}/users/me`, {
     headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+
+  return res.json();
+}
+
+export async function updateCurrentUser(data: UpdateUserData): Promise<CurrentUser> {
+  const res = await fetch(`${API_BASE}/users/me`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
   });
 
   if (!res.ok) {
