@@ -124,7 +124,7 @@ export const ProductDetailPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2 aspect-[4/5] bg-slate-100 rounded-lg overflow-hidden group">
                 <img
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-contain p-6 transition-transform duration-700 group-hover:scale-105"
                   src={selectedImage}
                   alt={product.name}
                 />
@@ -139,7 +139,7 @@ export const ProductDetailPage = () => {
                   }`}
                   aria-label={`Xem anh san pham ${index + 1}`}
                 >
-                  <img className="h-full w-full object-cover" src={image} alt={`${product.name} ${index + 1}`} />
+                  <img className="h-full w-full object-contain p-2" src={image} alt={`${product.name} ${index + 1}`} />
                 </button>
               ))}
             </div>

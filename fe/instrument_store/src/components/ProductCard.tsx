@@ -42,7 +42,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="relative aspect-[3/4] bg-slate-100 mb-6 overflow-hidden border border-transparent group-hover:border-slate-300 transition-all">
         <img
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
           src={product.image}
         />
         {product.badge && (
