@@ -1,167 +1,396 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE } from '../services/api';
+import { fetchCart, removeCartItem, updateCartItem, type CartItem, type CartResponse } from '../services/cart';
+import type { Product } from '../components/ProductCard';
 
-interface CartItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const fallbackImage = 'https://via.placeholder.com/600x800?text=No+Image';
+
+const recommendationScore = (product: Product) => (product.rating ?? 0) * 100 + product.price / 1_000_000;
 
 export const CartPage = () => {
-  const cartItems: CartItem[] = [
-    {
-      id: '1',
-      name: 'Đàn Dreadnought Gỗ Mahogany Chạm Khắc Thủ Công',
-      description: 'Mặt trước bằng gỗ thông Sitka nguyên tấm với mặt sau và hông bằng gỗ mahogany cao cấp.',
-      price: 3450,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDO9HXZmNfMk3khEqb7JN6B8dCQIHLN28J7WA3wvGKbNzqkTOTHyNboAbYU5H0nxTyCguXLbFDi-e-tkF20xRBzbejwFKvbgtujnpozeLjmH_iR1RtNVaZl7PfWPLjZYYBBAU9L43Q3uOyq_ElMpzJ1bKhm6-Ca5xynqXLhDrCDEw1UFnRhcXcFUX2bMRRHaad3jUt43jwYJWRa1o2_db2rhj-uV5ZWLAZyJOCNlEOW5rjqIkxy-YBbbfzF9VoIMgBc_ftfqZ_bGUJf',
-      quantity: 1,
-    },
-    {
-      id: '2',
-      name: 'Đàn Studio Grand Dòng Ebony',
-      description: 'Đàn studio grand nhỏ gọn với phím gõ nhạy bén và lớp sơn hoàn thiện bằng gỗ mun tiêu chuẩn.',
-      price: 12800,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmrhgIP5cRzVcA8xwHUy_9mCy_6wriQUMOa4vmelHPHgaCE4cqb14vsqMvb-HafS-PTloVu8UQqBEgcdUUgWYPWS5D0njkfy58ZyiVpW2Adue3qK3oa7YPNmyuJ6GpMJpL1FlPNrQHd4vrVbDbn7lmQZ0qlSqmaOMmcBPxPnsYOsQH8I5pnqNgvrkvp3doPsfihJCAASRus1XcwWn-eTnsvOQem5xWau62HZAWY-t1baxCPIiJVzqR1rO-LTC_L1bKMo0AseiRHMfA',
-      quantity: 1,
-    },
-  ];
+  const [cart, setCart] = useState<CartResponse | null>(null);
+  const [recommendations, setRecommendations] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.08;
-  const total = subtotal + tax;
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        setError('');
+        setLoading(true);
+
+        const [cartResponse, productsResponse] = await Promise.all([
+          fetchCart(),
+          fetch(`${API_BASE}/products`, { headers: { Accept: 'application/json' } }),
+        ]);
+
+        if (!productsResponse.ok) {
+          throw new Error('Khong the tai san pham goi y');
+        }
+
+        const productsData = (await productsResponse.json()) as Array<{
+          id: string;
+          slug?: string;
+          name: string;
+          brand?: string | null;
+          category?: string | null;
+          price?: number;
+          rating?: number | null;
+          badge?: string | null;
+          image?: string | null;
+        }>;
+
+        if (!mounted) return;
+
+        setCart(cartResponse);
+        setRecommendations(
+          productsData
+            .map((product) => ({
+              id: product.id,
+              slug: product.slug,
+              name: product.name,
+              brand: product.brand ?? product.category ?? 'Unknown',
+              price: product.price ?? 0,
+              image: product.image ?? fallbackImage,
+              rating: product.rating ?? undefined,
+              badge: product.badge ?? undefined,
+            }))
+            .filter((product) => !cartResponse.items.some((item) => item.product.id === product.id))
+            .sort((a, b) => recommendationScore(b) - recommendationScore(a))
+            .slice(0, 4),
+        );
+      } catch (loadError) {
+        if (!mounted) return;
+        setError(loadError instanceof Error ? loadError.message : 'Co loi xay ra');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const cartItems = cart?.items ?? [];
+  const itemCount = cart?.itemCount ?? 0;
+  const subtotal = cart?.subtotal ?? 0;
+  const shipping = 0;
+  const vat = 0;
+  const total = subtotal + shipping + vat;
+
+  const handleQuantityChange = async (item: CartItem, nextQuantity: number) => {
+    try {
+      setSavingId(item.product.id);
+      const nextCart = await updateCartItem(item.product.id, nextQuantity);
+      setCart(nextCart);
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Co loi xay ra');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleRemove = async (item: CartItem) => {
+    try {
+      setSavingId(item.product.id);
+      const nextCart = await removeCartItem(item.product.id);
+      setCart(nextCart);
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : 'Co loi xay ra');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const summaryRows = useMemo(
+    () => [
+      { label: 'Tạm tính', value: formatCurrency(subtotal) },
+      { label: 'Phí vận chuyển', value: 'Miễn phí' },
+      { label: 'Thuế GTGT', value: formatCurrency(vat) },
+    ],
+    [subtotal, vat],
+  );
 
   return (
-    <div className="min-h-screen bg-white">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 pt-24 md:pt-32 pb-16 md:pb-20">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Giỏ hàng của bạn</h1>
-          <p className="text-base text-slate-600">
-            Kiểm tra lại những nhạc cụ được chế tác bậc thầy mà bạn đã chọn trước khi thanh toán.
+    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f7f9fb_0%,#f8fafc_55%,#fdf7f2_100%)] text-slate-900">
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-40">
+        <div className="absolute right-[-8%] top-[-6%] h-[32rem] w-[32rem] rounded-full bg-[#ffdbcc] blur-[120px]" />
+        <div className="absolute bottom-[-8%] left-[-10%] h-[28rem] w-[28rem] rounded-full bg-[#dae2fd] blur-[120px]" />
+      </div>
+
+      <main className="mx-auto max-w-[1280px] px-5 pb-16 pt-10 lg:px-16 lg:pb-24 lg:pt-12">
+        <div className="mb-10 animate-[fadeIn_0.8s_ease-out_forwards]">
+          <nav className="mb-4 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <Link to="/" className="transition-colors hover:text-amber-700">
+              Trang chủ
+            </Link>
+            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span className="text-slate-900">Giỏ hàng</span>
+          </nav>
+          <h1 className="font-['Noto_Serif'] text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+            Giỏ hàng
+          </h1>
+          <p className="mt-3 max-w-2xl text-base italic leading-7 text-slate-600 md:text-lg">
+            Sự tuyển chọn của bạn cho những âm thanh thuần khiết và tinh tế nhất.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Cart Items */}
-          <section className="lg:col-span-8 space-y-4">
-            {cartItems.map((item) => (
-              <div key={item.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col md:flex-row shadow-sm group">
-                <div className="w-full md:w-64 h-56 md:h-64 bg-slate-100 flex items-center justify-center overflow-hidden">
-                  <img
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    src={item.image}
-                  />
-                </div>
+        {error && (
+          <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-                <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-1">{item.name}</h3>
-                      <p className="text-sm text-slate-600 line-clamp-2 md:max-w-md">{item.description}</p>
-                    </div>
-                    <span className="text-lg font-bold text-amber-600">{item.price.toLocaleString()} đ</span>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-                    <div className="flex items-center space-x-4 border border-slate-300 rounded-full px-4 py-2 w-fit">
-                      <button className="text-slate-500 hover:text-slate-900 transition-colors">
-                        <span className="material-symbols-outlined text-sm">remove</span>
-                      </button>
-                      <span className="font-semibold w-8 text-center">{item.quantity}</span>
-                      <button className="text-slate-500 hover:text-slate-900 transition-colors">
-                        <span className="material-symbols-outlined text-sm">add</span>
-                      </button>
-                    </div>
-                    <button className="text-red-600 font-semibold flex items-center gap-2 hover:opacity-80 transition-opacity">
-                      <span className="material-symbols-outlined">delete</span> XÓA
-                    </button>
-                  </div>
-                </div>
+        <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-8">
+          <section className="space-y-4 lg:col-span-8">
+            {loading ? (
+              <div className="rounded-2xl border border-white/70 bg-white/90 p-8 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Đang tải giỏ hàng</p>
+                <p className="mt-2 text-slate-600">Đợi mình lấy dữ liệu từ backend...</p>
               </div>
-            ))}
+            ) : cartItems.length > 0 ? (
+              cartItems.map((item, index) => {
+                const product = item.product;
+                const image = product.image ?? fallbackImage;
+                const lineTotal = item.lineTotal;
 
-            <div className="pt-4">
+                return (
+                  <article
+                    key={product.id}
+                    className="group flex flex-col gap-4 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:flex-row md:items-start md:gap-6 md:p-5"
+                    style={{ animationDelay: `${index * 120}ms` }}
+                  >
+                    <div className="flex-shrink-0 self-start">
+                      <div className="h-28 w-28 overflow-hidden rounded-xl bg-slate-100 md:h-36 md:w-36">
+                        <img
+                          src={image}
+                          alt={product.name}
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="min-w-0">
+                        <h2 className="break-words font-['Noto_Serif'] text-lg font-medium leading-tight text-slate-950 md:text-xl">
+                          {product.name}
+                        </h2>
+                        <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          {product.brand ?? product.category ?? 'Nhạc cụ'}
+                        </p>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                          {product.description ?? 'Sản phẩm được đồng bộ từ backend.'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(item)}
+                          disabled={savingId === product.id}
+                          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">close</span>
+                          Xóa
+                        </button>
+                      </div>
+
+                      <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-slate-500">Giá</span>
+                          <span className="whitespace-nowrap text-sm font-semibold text-slate-900 md:text-base">
+                            {formatCurrency(product.price)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-slate-500">Số lượng</span>
+                          <div className="flex items-center gap-4 rounded-full border border-slate-300 bg-white px-4 py-2">
+                            <button
+                              type="button"
+                              onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                              disabled={savingId === product.id}
+                              className="text-slate-500 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`Giảm số lượng ${product.name}`}
+                            >
+                              <span className="material-symbols-outlined text-[18px]">remove</span>
+                            </button>
+                            <span className="w-7 text-center text-sm font-semibold text-slate-900">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                              disabled={savingId === product.id}
+                              className="text-slate-500 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`Tăng số lượng ${product.name}`}
+                            >
+                              <span className="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-slate-500">Tổng cộng</span>
+                          <span className="whitespace-nowrap font-['Noto_Serif'] text-lg font-medium text-amber-700 md:text-xl">
+                            {formatCurrency(lineTotal)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-10 text-center shadow-sm">
+                <p className="text-lg font-semibold text-slate-900">Giỏ hàng đang trống</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Hãy quay lại danh sách sản phẩm để thêm nhạc cụ phù hợp.
+                </p>
+                <Link
+                  to="/products"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-900 px-5 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-900 hover:text-white"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  Tiếp tục mua sắm
+                </Link>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
               <Link
                 to="/products"
-                className="inline-flex items-center gap-2 text-slate-900 font-semibold hover:underline decoration-amber-600/30 underline-offset-4"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition-colors hover:text-amber-700"
               >
-                <span className="material-symbols-outlined">arrow_back</span> TIẾP TỤC MUA SẮM
+                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                Tiếp tục mua sắm
               </Link>
+
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-900 transition-all hover:border-slate-900 hover:bg-slate-900 hover:text-white"
+              >
+                Cập nhật giỏ hàng
+              </button>
             </div>
           </section>
 
-          {/* Order Summary */}
-          <aside className="lg:col-span-4 lg:sticky lg:top-32">
-            <div className="bg-white border border-slate-200 rounded-lg p-10 shadow-lg">
-              <h2 className="text-xl font-semibold text-slate-900 mb-8 pb-4 border-b border-slate-100">
-                Tóm tắt đơn hàng
-              </h2>
+          <aside className="space-y-4 lg:col-span-4 lg:sticky lg:top-8">
+            <div className="rounded-3xl border border-white/70 bg-slate-50/95 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur">
+              <h2 className="font-['Noto_Serif'] text-3xl font-medium text-slate-950">Tổng đơn hàng</h2>
+              <p className="mt-2 text-sm text-slate-500">{itemCount} sản phẩm trong giỏ</p>
 
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Tạm tính</span>
-                  <span className="text-slate-900 font-semibold">{subtotal.toLocaleString()} đ</span>
-                </div>
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Phí vận chuyển</span>
-                  <span className="text-amber-600 font-semibold">Miễn phí</span>
-                </div>
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Thuế dự kiến</span>
-                  <span className="text-slate-900 font-semibold">{tax.toLocaleString()} đ</span>
-                </div>
+              <div className="mt-8 space-y-5 border-b border-slate-200 pb-8">
+                {summaryRows.map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-slate-600">{row.label}</span>
+                    <span className="text-base text-slate-900">{row.value}</span>
+                  </div>
+                ))}
               </div>
 
-              <div className="mb-8">
-                <label className="block text-xs text-slate-600 mb-2 uppercase font-semibold">MÃ KHUYẾN MÃI</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nhập mã"
-                    className="flex-1 bg-slate-50 border-0 border-b border-slate-300 focus:ring-0 focus:border-amber-600 transition-all px-0 py-2 font-base"
-                  />
-                  <button className="font-semibold text-slate-900 border border-slate-900 px-4 py-2 hover:bg-slate-900 hover:text-white transition-all">
-                    ÁP DỤNG
-                  </button>
+              <div className="py-8">
+                <div className="flex items-end justify-between gap-4">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Tổng cộng</span>
+                  <span className="font-['Noto_Serif'] text-3xl font-semibold text-amber-700 md:text-[1.9rem]">
+                    {formatCurrency(total)}
+                  </span>
                 </div>
+                <p className="mt-2 text-right text-[12px] italic text-slate-500">(Đã bao gồm VAT nếu có)</p>
               </div>
 
-              <div className="border-t border-slate-100 pt-6 mb-10">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-lg font-semibold text-slate-900">Tổng cộng</span>
-                  <span className="text-4xl font-bold text-slate-900">{total.toLocaleString()} đ</span>
-                </div>
-                <p className="text-[10px] text-slate-500 text-right">THANH TOÁN ĐƯỢC BẢO MẬT SSL</p>
-              </div>
-
-              <button className="w-full bg-slate-900 text-white font-semibold py-5 rounded flex items-center justify-center gap-3 hover:bg-slate-800 transition-all active:scale-[0.99]">
-                THANH TOÁN NGAY <span className="material-symbols-outlined">lock</span>
+              <button
+                type="button"
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-slate-950 px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:bg-slate-800 active:scale-[0.99]"
+              >
+                Thanh toán ngay
+                <span className="material-symbols-outlined text-[18px]">lock</span>
               </button>
 
-              <div className="mt-8 flex justify-center gap-4 opacity-40 grayscale">
-                <span className="material-symbols-outlined text-4xl">credit_card</span>
-                <span className="material-symbols-outlined text-4xl">account_balance</span>
-                <span className="material-symbols-outlined text-4xl">wallet</span>
+              <div className="mt-8 space-y-3 text-sm text-slate-600">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-amber-700">verified_user</span>
+                  <span>Thanh toán bảo mật 100%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-amber-700">local_shipping</span>
+                  <span>Giao hàng thủ công chuyên nghiệp</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-amber-700">workspace_premium</span>
+                  <span>Bảo hành 5 năm chính hãng</span>
+                </div>
               </div>
             </div>
 
-            <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-lg">
-              <div className="flex gap-4 items-start">
-                <span className="material-symbols-outlined text-amber-600">verified</span>
-                <div>
-                  <h4 className="font-semibold text-slate-900 mb-1">Bảo hành âm thanh trọn đời</h4>
-                  <p className="text-sm text-slate-600">
-                    Tất cả các nhạc cụ cấp bậc thầy của chúng tôi đều bao gồm bảo hành trọn đời về cấu trúc.
-                  </p>
-                </div>
+            <div className="rounded-2xl border border-white/70 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)] backdrop-blur">
+              <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.2em] text-slate-600">Mã giảm giá</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Nhập mã của bạn"
+                  className="min-w-0 flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                />
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-900 px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-slate-900 hover:text-white"
+                >
+                  Áp dụng
+                </button>
               </div>
             </div>
           </aside>
         </div>
+
+        <section className="mt-16 border-t border-slate-200 pt-12">
+          <h2 className="mb-10 text-center font-['Noto_Serif'] text-3xl font-medium text-slate-950 md:text-4xl">
+            Có thể bạn sẽ cần
+          </h2>
+
+          {recommendations.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {recommendations.map((item, index) => (
+                <article
+                  key={item.id}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="aspect-square overflow-hidden bg-slate-100">
+                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="p-5">
+                    <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                      {item.brand}
+                    </p>
+                    <h3 className="mt-2 font-['Noto_Serif'] text-[18px] font-medium text-slate-950">{item.name}</h3>
+                    <p className="mt-2 text-sm font-medium text-amber-700">{formatCurrency(item.price)}</p>
+                    <Link
+                      to={`/product/${item.slug ?? item.id}`}
+                      className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-800 transition-all hover:border-slate-900 hover:bg-slate-900 hover:text-white"
+                    >
+                      Xem chi tiết
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-sm text-slate-500">Chưa có sản phẩm gợi ý từ backend.</p>
+          )}
+        </section>
       </main>
     </div>
   );

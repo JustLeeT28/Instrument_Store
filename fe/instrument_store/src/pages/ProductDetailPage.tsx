@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE } from '../services/api';
 import { isAuthenticated } from '../services/auth';
 import { addFavorite, fetchFavoriteStatus, removeFavorite } from '../services/favorites';
+import { addCartItem } from '../services/cart';
 
 export const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -12,6 +13,8 @@ export const ProductDetailPage = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartMessage, setCartMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -65,6 +68,21 @@ export const ProductDetailPage = () => {
       setFavoriteError(err instanceof Error ? err.message : 'Khong cap nhat duoc yeu thich');
     } finally {
       setFavoriteLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!product?.id || cartLoading) return;
+
+    try {
+      setCartLoading(true);
+      setCartMessage(null);
+      await addCartItem(product.id, 1);
+      setCartMessage('Đã thêm vào giỏ hàng');
+    } catch (err) {
+      setCartMessage(err instanceof Error ? err.message : 'Không thêm được vào giỏ hàng');
+    } finally {
+      setCartLoading(false);
     }
   };
 
@@ -137,9 +155,13 @@ export const ProductDetailPage = () => {
 
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="flex-grow bg-slate-900 text-white font-semibold py-4 md:py-5 rounded-lg active:scale-[0.98] transition-all hover:bg-slate-800 shadow-lg flex items-center justify-center gap-2">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={cartLoading}
+                  className="flex-grow bg-slate-900 text-white font-semibold py-4 md:py-5 rounded-lg active:scale-[0.98] transition-all hover:bg-slate-800 shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
                   <span className="material-symbols-outlined">shopping_bag</span>
-                  <span>Thêm vào giỏ hàng</span>
+                  <span>{cartLoading ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}</span>
                 </button>
                 <button 
                   onClick={handleFavoriteClick}
@@ -156,6 +178,7 @@ export const ProductDetailPage = () => {
                   </span>
                 </button>
               </div>
+              {cartMessage && <p className="text-center text-xs text-slate-600">{cartMessage}</p>}
               {favoriteError && <p className="text-center text-xs text-red-600">{favoriteError}</p>}
               <p className="text-center text-xs text-slate-600 flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-sm">local_shipping</span> Miễn phí Vận chuyển Toàn cầu & Bảo hiểm
