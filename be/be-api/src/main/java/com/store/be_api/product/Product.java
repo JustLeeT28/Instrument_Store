@@ -7,11 +7,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -68,6 +72,12 @@ public class Product {
 
     @Column(columnDefinition = "jsonb")
     private String specs;
+
+    @OneToMany
+    @JoinColumn(name = "product_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @OrderBy("isPrimary DESC")
+    @Builder.Default
+    private List<ProductImage> images = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

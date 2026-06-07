@@ -1,6 +1,7 @@
 package com.store.be_api.product.dto;
 
 import java.util.UUID;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,5 +24,6 @@ public class ProductDto {
     private Integer stockQty;
     private String description;
     private String image;
+    private List<String> images;
     private java.util.Map<String, Object> specs;
 }

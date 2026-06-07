@@ -5,6 +5,8 @@ import { Categories } from '../components/Categories';
 import { API_BASE } from '../services/api';
 import type { Product } from '../components/ProductCard';
 
+const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/600x800?text=No+Image';
+
 type ProductFilters = {
   brands: string[];
   categories?: string[];
@@ -51,7 +53,8 @@ export const ProductsPage = () => {
         name: p.name,
         brand: p.brand ?? p.category ?? 'Unknown',
         price: p.price ?? 0,
-        image: p.image ?? 'https://via.placeholder.com/600x800?text=No+Image',
+        image: p.image ?? p.images?.[0] ?? PLACEHOLDER_IMAGE,
+        images: Array.isArray(p.images) ? p.images : [],
         rating: p.rating ?? undefined,
         badge: p.badge ?? undefined,
       })));

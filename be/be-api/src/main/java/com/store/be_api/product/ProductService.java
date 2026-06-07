@@ -61,6 +61,14 @@ public class ProductService {
     }
 
     private ProductDto toDto(Product p) {
+        List<String> imageUrls = p.getImages() == null
+                ? List.of()
+                : p.getImages().stream()
+                    .filter(image -> image.getImageUrl() != null && !image.getImageUrl().isBlank())
+                    .sorted(Comparator.comparing((ProductImage image) -> Boolean.TRUE.equals(image.getIsPrimary())).reversed())
+                    .map(ProductImage::getImageUrl)
+                    .toList();
+
         Map<String, Object> specsMap = null;
         try {
             if (p.getSpecs() != null) {
@@ -82,7 +90,8 @@ public class ProductService {
                 .badge(p.getBadge())
                 .stockQty(p.getStockQty())
                 .description(p.getDescription())
-                .image(PLACEHOLDER_IMAGE)
+                .image(imageUrls.isEmpty() ? PLACEHOLDER_IMAGE : imageUrls.get(0))
+                .images(imageUrls)
                 .specs(specsMap)
                 .build();
     }

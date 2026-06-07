@@ -13,6 +13,7 @@ export interface FavoriteProduct {
   stockQty?: number;
   description?: string | null;
   image?: string | null;
+  images?: string[] | null;
   specs?: Record<string, unknown> | null;
 }
 
