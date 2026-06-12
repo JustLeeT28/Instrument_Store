@@ -25,11 +25,17 @@ interface ProductImage {
   isPrimary: boolean;
 }
 
+interface SpecItem {
+  key: string;
+  value: string;
+}
+
 // Mở rộng interface cho form chỉnh sửa
-interface EditProductData extends Omit<AdminProductItem, 'images'> {
+interface EditProductData extends Omit<AdminProductItem, 'images' | 'specs'> {
   slug?: string;
   description?: string;
   images: ProductImage[];
+  specs: SpecItem[];
 }
 
 export function ProductManagement() {
@@ -67,11 +73,18 @@ export function ProductManagement() {
       normalizedImages.push({ url: p.image, isPrimary: true });
     }
 
+    // Chuyển đổi Record sang Array để dễ quản lý thứ tự trong UI
+    const normalizedSpecs: SpecItem[] = Object.entries(p.specs || {}).map(([key, value]) => ({
+      key,
+      value: String(value)
+    }));
+
     setEditingProduct({
       ...p,
       slug: p.slug || '',
       description: p.description || '',
-      images: normalizedImages
+      images: normalizedImages,
+      specs: normalizedSpecs
     });
   };
 
@@ -103,12 +116,51 @@ export function ProductManagement() {
     setEditingProduct({ ...editingProduct, images: updated });
   };
 
+  // Logic xử lý Specs
+  const addSpec = () => {
+    if (!editingProduct) return;
+    setEditingProduct({
+      ...editingProduct,
+      specs: [...editingProduct.specs, { key: '', value: '' }]
+    });
+  };
+
+  const updateSpec = (index: number, field: 'key' | 'value', val: string) => {
+    if (!editingProduct) return;
+    const newSpecs = [...editingProduct.specs];
+    newSpecs[index] = { ...newSpecs[index], [field]: val };
+    setEditingProduct({ ...editingProduct, specs: newSpecs });
+  };
+
+  const removeSpec = (index: number) => {
+    if (!editingProduct) return;
+    setEditingProduct({
+      ...editingProduct,
+      specs: editingProduct.specs.filter((_, i) => i !== index)
+    });
+  };
+
+  const moveSpec = (index: number, direction: 'up' | 'down') => {
+    if (!editingProduct) return;
+    const newSpecs = [...editingProduct.specs];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newSpecs.length) return;
+    [newSpecs[index], newSpecs[targetIndex]] = [newSpecs[targetIndex], newSpecs[index]];
+    setEditingProduct({ ...editingProduct, specs: newSpecs });
+  };
+
   const handleSave = async () => {
     if (!editingProduct) return;
     setIsSaving(true);
     try {
+      // Chuyển đổi ngược lại từ Array sang Record (JSON Object) để lưu vào DB
+      const specsRecord = editingProduct.specs.reduce((acc, curr) => {
+        if (curr.key.trim()) acc[curr.key.trim()] = curr.value;
+        return acc;
+      }, {} as Record<string, any>);
+
       // Placeholder: Gọi API cập nhật sản phẩm ở đây
-      console.log('Saving changes...', editingProduct);
+      console.log('Saving changes...', { ...editingProduct, specs: specsRecord });
       setEditingProduct(null);
     } finally {
       setIsSaving(false);
@@ -257,6 +309,73 @@ export function ProductManagement() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="pt-10 border-t border-slate-100">
+                <div className="flex justify-between items-center mb-8">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Thông số kỹ thuật</label>
+                  <button 
+                    onClick={addSpec}
+                    className="flex items-center gap-2 px-6 py-3 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">add_circle</span>
+                    THÊM THÔNG SỐ
+                  </button>
+                </div>
+
+                <div className="overflow-hidden border border-slate-100 rounded-[2rem] bg-white">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tên thông số (Key)</th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giá trị (Value)</th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-40 text-center">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {editingProduct.specs.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-8 py-10 text-center text-slate-400 italic text-sm">Chưa có thông số kỹ thuật nào.</td>
+                        </tr>
+                      )}
+                      {editingProduct.specs.map((spec, idx) => (
+                        <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <input 
+                              type="text" 
+                              placeholder="Ví dụ: Chất liệu"
+                              className="w-full bg-transparent border-none focus:ring-0 text-slate-900 font-semibold text-sm placeholder:text-slate-300"
+                              value={spec.key}
+                              onChange={e => updateSpec(idx, 'key', e.target.value)}
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <input 
+                              type="text" 
+                              placeholder="Ví dụ: Gỗ Mahogany"
+                              className="w-full bg-transparent border-none focus:ring-0 text-slate-900 text-sm placeholder:text-slate-300"
+                              value={spec.value}
+                              onChange={e => updateSpec(idx, 'value', e.target.value)}
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => moveSpec(idx, 'up')} disabled={idx === 0} className="p-2 text-slate-400 hover:text-amber-600 disabled:opacity-20">
+                                <span className="material-symbols-outlined text-lg">arrow_upward</span>
+                              </button>
+                              <button onClick={() => moveSpec(idx, 'down')} disabled={idx === editingProduct.specs.length - 1} className="p-2 text-slate-400 hover:text-amber-600 disabled:opacity-20">
+                                <span className="material-symbols-outlined text-lg">arrow_downward</span>
+                              </button>
+                              <button onClick={() => removeSpec(idx)} className="p-2 text-slate-400 hover:text-red-500">
+                                <span className="material-symbols-outlined text-lg">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
