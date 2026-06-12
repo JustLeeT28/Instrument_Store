@@ -255,6 +255,15 @@ export const ProfilePage = () => {
               <span className="material-symbols-outlined">favorite</span>
               Danh sách yêu thích
             </Link>
+            {user?.role === 'ADMIN' && (
+              <Link
+                className="mt-3 flex items-center gap-4 rounded-2xl px-4 py-3 font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                to="/admin"
+              >
+                <span className="material-symbols-outlined">admin_panel_settings</span>
+                Quản lý cửa hàng
+              </Link>
+            )}
             <div className="pt-4">
               <button
                 type="button"

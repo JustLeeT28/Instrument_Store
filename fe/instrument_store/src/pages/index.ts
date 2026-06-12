@@ -6,3 +6,5 @@ export { ProfilePage } from './ProfilePage';
 export { FavoritePage } from './FavoritePage';
 export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
+export { AdminDashboard } from './AdminDashboard';
+export { ProductManagement } from './admin/ProductManagement';
