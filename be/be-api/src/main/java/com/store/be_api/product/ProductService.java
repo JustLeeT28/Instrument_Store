@@ -3,6 +3,8 @@ package com.store.be_api.product;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.store.be_api.product.dto.ProductDto;
+import com.store.be_api.product.dto.ProductUpdateRequest;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional(readOnly = true)
 public class ProductService {
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
     private final ObjectMapper objectMapper;
 
     private static final String PLACEHOLDER_IMAGE = "https://via.placeholder.com/600x800?text=No+Image";
@@ -58,6 +61,49 @@ public class ProductService {
         Optional<Product> opt = productRepository.findBySlug(slug);
         return opt.map(this::toDto)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+    }
+
+    @Transactional
+    public ProductDto updateProduct(UUID id, ProductUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+
+        if (request.getName() != null) product.setName(request.getName());
+        if (request.getSlug() != null) product.setSlug(request.getSlug());
+        if (request.getDescription() != null) product.setDescription(request.getDescription());
+        if (request.getPrice() != null) product.setBasePrice(BigDecimal.valueOf(request.getPrice()));
+        if (request.getStockQty() != null) product.setStockQty(request.getStockQty());
+
+        if (request.getSpecs() != null) {
+            try {
+                product.setSpecs(objectMapper.writeValueAsString(request.getSpecs()));
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid specs payload");
+            }
+        }
+
+        productRepository.save(product);
+
+        productImageRepository.deleteByProductId(product.getId());
+        List<ProductImage> savedImages = List.of();
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            List<ProductImage> images = request.getImages().stream()
+                    .filter(image -> image.getImageUrl() != null && !image.getImageUrl().isBlank())
+                    .map(image -> ProductImage.builder()
+                            .productId(product.getId())
+                            .imageUrl(image.getImageUrl())
+                            .isPrimary(Boolean.TRUE.equals(image.getIsPrimary()))
+                            .build())
+                    .toList();
+
+            if (!images.isEmpty() && images.stream().noneMatch(ProductImage::getIsPrimary)) {
+                images.get(0).setIsPrimary(true);
+            }
+            savedImages = productImageRepository.saveAll(images);
+        }
+
+        product.setImages(new java.util.ArrayList<>(savedImages));
+        return toDto(product);
     }
 
     private ProductDto toDto(Product p) {
