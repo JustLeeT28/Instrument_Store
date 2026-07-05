@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { fetchProducts, type ProductItem as ServiceProductItem } from '../../services/products';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { fetchProducts, updateProduct, type ProductItem as ServiceProductItem } from '../../services/products';
 
 // Định nghĩa Interface riêng cho trang Admin để mở rộng thêm các trường UI cần thiết
 // và tránh xung đột với định nghĩa gốc từ Service
@@ -47,6 +47,8 @@ export function ProductManagement() {
   // State cho cửa sổ Edit
   const [editingProduct, setEditingProduct] = useState<EditProductData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadImageError, setUploadImageError] = useState<string | null>(null);
   const [newImgLink, setNewImgLink] = useState('');
 
   useEffect(() => {
@@ -90,12 +92,73 @@ export function ProductManagement() {
 
   const handleAddImage = () => {
     if (!newImgLink.trim() || !editingProduct) return;
-    const isPrimary = editingProduct.images.length === 0;
+    const hasPrimary = editingProduct.images.some(img => img.isPrimary);
+    const isPrimary = editingProduct.images.length === 0 || !hasPrimary;
     setEditingProduct({
       ...editingProduct,
       images: [...editingProduct.images, { url: newImgLink.trim(), isPrimary }]
     });
     setNewImgLink('');
+    setUploadImageError(null);
+  };
+
+  const uploadImageToCloudinary = async (file: File) => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      throw new Error('Thiếu cấu hình Cloudinary. Vui lòng thêm VITE_CLOUDINARY_CLOUD_NAME và VITE_CLOUDINARY_UPLOAD_PRESET vào file .env');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    formData.append('folder', 'instrument-store/products');
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || 'Upload ảnh lên Cloudinary thất bại');
+    }
+
+    const data = await res.json();
+    return data.secure_url as string;
+  };
+
+  const handleImageFilesSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length || !editingProduct) return;
+
+    setIsUploadingImage(true);
+    setUploadImageError(null);
+
+    try {
+      const uploadedUrls = await Promise.all(files.map(file => uploadImageToCloudinary(file)));
+      const hasPrimary = editingProduct.images.some(img => img.isPrimary);
+
+      setEditingProduct(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          images: [
+            ...prev.images,
+            ...uploadedUrls.map((url, index) => ({
+              url,
+              isPrimary: prev.images.length === 0 && !hasPrimary && index === 0,
+            }))
+          ]
+        };
+      });
+    } catch (error) {
+      setUploadImageError(error instanceof Error ? error.message : 'Upload ảnh thất bại');
+    } finally {
+      setIsUploadingImage(false);
+      event.target.value = '';
+    }
   };
 
   const setPrimaryImage = (index: number) => {
@@ -152,16 +215,38 @@ export function ProductManagement() {
   const handleSave = async () => {
     if (!editingProduct) return;
     setIsSaving(true);
+    setError(null);
+
     try {
-      // Chuyển đổi ngược lại từ Array sang Record (JSON Object) để lưu vào DB
       const specsRecord = editingProduct.specs.reduce((acc, curr) => {
         if (curr.key.trim()) acc[curr.key.trim()] = curr.value;
         return acc;
       }, {} as Record<string, any>);
 
-      // Placeholder: Gọi API cập nhật sản phẩm ở đây
-      console.log('Saving changes...', { ...editingProduct, specs: specsRecord });
+      const payload = {
+        name: editingProduct.name,
+        slug: editingProduct.slug,
+        description: editingProduct.description,
+        price: editingProduct.price,
+        stockQty: editingProduct.stockQty ?? 0,
+        images: editingProduct.images.map(({ url, isPrimary }) => ({ imageUrl: url, isPrimary })),
+        specs: specsRecord,
+      };
+
+      const updatedProduct = await updateProduct(editingProduct.id, payload);
+      setProducts(prev => prev.map(item => item.id === editingProduct.id ? {
+        ...item,
+        name: updatedProduct.name ?? item.name,
+        slug: updatedProduct.slug ?? item.slug,
+        price: updatedProduct.price ?? item.price,
+        stockQty: updatedProduct.stockQty ?? item.stockQty,
+        image: updatedProduct.image ?? updatedProduct.images?.[0] ?? item.image,
+        images: updatedProduct.images ?? item.images ?? [],
+        specs: updatedProduct.specs ?? item.specs,
+      } : item));
       setEditingProduct(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không thể lưu sản phẩm');
     } finally {
       setIsSaving(false);
     }
@@ -278,15 +363,27 @@ export function ProductManagement() {
 
               <div className="pt-8 border-t border-slate-100">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-6">Thư viện hình ảnh</label>
-                <div className="flex gap-4 mb-8">
-                  <input 
-                    type="text" 
-                    placeholder="Dán link hình ảnh mới tại đây..."
-                    className="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-amber-500 transition shadow-inner"
-                    value={newImgLink}
-                    onChange={e => setNewImgLink(e.target.value)}
-                  />
-                  <button onClick={handleAddImage} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-xs hover:bg-amber-600 transition shadow-lg active:scale-95 uppercase tracking-widest">Thêm ảnh</button>
+                <div className="flex flex-col gap-4 mb-8">
+                  <div className="flex gap-4">
+                    <input 
+                      type="text" 
+                      placeholder="Dán link hình ảnh mới tại đây..."
+                      className="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-amber-500 transition shadow-inner"
+                      value={newImgLink}
+                      onChange={e => setNewImgLink(e.target.value)}
+                    />
+                    <button onClick={handleAddImage} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-xs hover:bg-amber-600 transition shadow-lg active:scale-95 uppercase tracking-widest">Thêm ảnh</button>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <label className="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+                      <span className="material-symbols-outlined text-base">cloud_upload</span>
+                      <span>{isUploadingImage ? 'Đang upload...' : 'Tải ảnh từ máy tính'}</span>
+                      <input type="file" accept="image/*" multiple onChange={handleImageFilesSelected} className="hidden" />
+                    </label>
+                    <p className="text-xs text-slate-500">Ảnh sẽ upload lên Cloudinary rồi lưu URL vào sản phẩm.</p>
+                  </div>
+                  {uploadImageError && <p className="text-sm text-red-600">{uploadImageError}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

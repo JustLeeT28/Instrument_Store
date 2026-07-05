@@ -7,6 +7,23 @@ export type ProductItem = {
   price: number;
   stockQty?: number | null;
   image?: string | null;
+  images?: string[] | null;
+  specs?: Record<string, any> | null;
+};
+
+export type ProductImagePayload = {
+  imageUrl: string;
+  isPrimary?: boolean;
+};
+
+export type ProductUpdatePayload = {
+  name?: string;
+  slug?: string;
+  description?: string;
+  price?: number;
+  stockQty?: number;
+  images?: ProductImagePayload[];
+  specs?: Record<string, any>;
 };
 
 async function readErrorMessage(res: Response) {
@@ -39,6 +56,21 @@ export async function fetchProductById(id: string): Promise<ProductItem> {
     headers: { Accept: 'application/json' },
     credentials: 'include',
   });
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
+export async function updateProduct(id: string, payload: ProductUpdatePayload): Promise<ProductItem> {
+  const res = await fetch(`${API_BASE}/products/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
   if (!res.ok) throw new Error(await readErrorMessage(res));
   return res.json();
 }

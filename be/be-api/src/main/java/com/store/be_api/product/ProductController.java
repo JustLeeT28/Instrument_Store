@@ -1,7 +1,9 @@
 package com.store.be_api.product;
 
 import com.store.be_api.product.dto.ProductDto;
+import com.store.be_api.product.dto.ProductUpdateRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,5 +41,11 @@ public class ProductController {
     @GetMapping("/{id}")
     public ProductDto getById(@PathVariable UUID id) {
         return productService.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ProductDto updateProduct(@PathVariable UUID id, @RequestBody ProductUpdateRequest request) {
+        return productService.updateProduct(id, request);
     }
 }
