@@ -25,5 +25,5 @@ public class ProductDto {
     private String description;
     private String image;
     private List<String> images;
-    private java.util.Map<String, Object> specs;
+    private List<java.util.Map<String, String>> specs;
 }

@@ -19,7 +19,7 @@ public class ProductUpdateRequest {
     private Double price;
     private Integer stockQty;
     private List<ProductImagePayload> images;
-    private Map<String, Object> specs;
+    private List<Map<String, String>> specs;
 
     @Data
     @Builder

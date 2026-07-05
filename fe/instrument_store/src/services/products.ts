@@ -8,7 +8,7 @@ export type ProductItem = {
   stockQty?: number | null;
   image?: string | null;
   images?: string[] | null;
-  specs?: Record<string, any> | null;
+  specs?: Array<Record<string, string>> | null;
 };
 
 export type ProductImagePayload = {
@@ -23,7 +23,7 @@ export type ProductUpdatePayload = {
   price?: number;
   stockQty?: number;
   images?: ProductImagePayload[];
-  specs?: Record<string, any>;
+  specs?: Array<Record<string, string>>;
 };
 
 async function readErrorMessage(res: Response) {

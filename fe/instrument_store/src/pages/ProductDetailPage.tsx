@@ -217,12 +217,21 @@ export const ProductDetailPage = () => {
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-900">Thông số kỹ thuật</h3>
               </div>
               <div className="divide-y divide-slate-200">
-                {product.specs && Object.entries(product.specs).map(([key, value], idx) => (
-                  <div key={idx} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 px-6 py-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                    <span className="text-xs text-slate-600 font-semibold">{key}</span>
-                    <span className="sm:col-span-2 text-sm text-slate-900">{String(value)}</span>
-                  </div>
-                ))}
+                {product.specs && (
+                  Array.isArray(product.specs)
+                    ? product.specs.map((spec: any, idx: number) => (
+                        <div key={idx} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 px-6 py-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                          <span className="text-xs text-slate-600 font-semibold">{spec.key}</span>
+                          <span className="sm:col-span-2 text-sm text-slate-900">{spec.value}</span>
+                        </div>
+                      ))
+                    : Object.entries(product.specs).map(([key, value], idx) => (
+                        <div key={idx} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 px-6 py-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                          <span className="text-xs text-slate-600 font-semibold">{key}</span>
+                          <span className="sm:col-span-2 text-sm text-slate-900">{String(value)}</span>
+                        </div>
+                      ))
+                )}
               </div>
             </div>
           </div>

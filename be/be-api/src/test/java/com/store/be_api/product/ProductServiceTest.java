@@ -58,7 +58,7 @@ class ProductServiceTest {
                 .images(List.of(
                         ProductUpdateRequest.ProductImagePayload.builder().imageUrl("https://cdn.test/1.jpg").isPrimary(true).build()
                 ))
-                .specs(java.util.Map.of("material", "wood"))
+                .specs(List.of(java.util.Map.of("key", "material", "value", "wood")))
                 .build();
 
         var updated = productService.updateProduct(productId, request);

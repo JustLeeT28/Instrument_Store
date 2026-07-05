@@ -75,11 +75,13 @@ export function ProductManagement() {
       normalizedImages.push({ url: p.image, isPrimary: true });
     }
 
-    // Chuyển đổi Record sang Array để dễ quản lý thứ tự trong UI
-    const normalizedSpecs: SpecItem[] = Object.entries(p.specs || {}).map(([key, value]) => ({
-      key,
-      value: String(value)
-    }));
+    // Specs là Array rồi, không cần convert
+    const normalizedSpecs: SpecItem[] = Array.isArray(p.specs) 
+      ? (p.specs as any[]).map(spec => ({
+          key: spec.key || '',
+          value: spec.value || ''
+        }))
+      : [];
 
     setEditingProduct({
       ...p,
@@ -218,10 +220,9 @@ export function ProductManagement() {
     setError(null);
 
     try {
-      const specsRecord = editingProduct.specs.reduce((acc, curr) => {
-        if (curr.key.trim()) acc[curr.key.trim()] = curr.value;
-        return acc;
-      }, {} as Record<string, any>);
+      const specsArray = editingProduct.specs
+        .filter(spec => spec.key.trim())
+        .map(spec => ({ key: spec.key.trim(), value: spec.value }));
 
       const payload = {
         name: editingProduct.name,
@@ -230,7 +231,7 @@ export function ProductManagement() {
         price: editingProduct.price,
         stockQty: editingProduct.stockQty ?? 0,
         images: editingProduct.images.map(({ url, isPrimary }) => ({ imageUrl: url, isPrimary })),
-        specs: specsRecord,
+        specs: specsArray,
       };
 
       const updatedProduct = await updateProduct(editingProduct.id, payload);

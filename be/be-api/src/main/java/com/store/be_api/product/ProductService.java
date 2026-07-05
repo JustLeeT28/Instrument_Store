@@ -115,13 +115,22 @@ public class ProductService {
                     .map(ProductImage::getImageUrl)
                     .toList();
 
-        Map<String, Object> specsMap = null;
+        List<Map<String, String>> specsList = List.of();
         try {
-            if (p.getSpecs() != null) {
-                specsMap = objectMapper.readValue(p.getSpecs(), new TypeReference<Map<String, Object>>() {});
+            if (p.getSpecs() != null && !p.getSpecs().isBlank()) {
+                // Try parsing as Array format first (new format)
+                try {
+                    specsList = objectMapper.readValue(p.getSpecs(), new TypeReference<List<Map<String, String>>>() {});
+                } catch (Exception e) {
+                    // If Array parse fails, try Object format (old format) and convert to Array
+                    Map<String, String> specsMap = objectMapper.readValue(p.getSpecs(), new TypeReference<Map<String, String>>() {});
+                    specsList = specsMap.entrySet().stream()
+                        .map(entry -> Map.of("key", entry.getKey(), "value", entry.getValue()))
+                        .collect(Collectors.toList());
+                }
             }
         } catch (Exception e) {
-            specsMap = Map.of();
+            specsList = List.of();
         }
 
         return ProductDto.builder()
@@ -138,7 +147,7 @@ public class ProductService {
                 .description(p.getDescription())
                 .image(imageUrls.isEmpty() ? PLACEHOLDER_IMAGE : imageUrls.get(0))
                 .images(imageUrls)
-                .specs(specsMap)
+                .specs(specsList)
                 .build();
     }
 }
