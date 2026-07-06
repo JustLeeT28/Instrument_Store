@@ -1,7 +1,10 @@
 package com.store.be_api.product.dto;
 
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
+
+import com.store.be_api.review.dto.ReviewDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,4 +29,5 @@ public class ProductDto {
     private String image;
     private List<String> images;
     private List<java.util.Map<String, String>> specs;
+    private List<ReviewDto> reviews;
 }

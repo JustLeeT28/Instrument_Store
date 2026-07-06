@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.store.be_api.product.dto.ProductDto;
 import com.store.be_api.product.dto.ProductUpdateRequest;
 import java.math.BigDecimal;
+import com.store.be_api.review.ReviewService;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
     private final ObjectMapper objectMapper;
+    private final ReviewService reviewService;
 
     private static final String PLACEHOLDER_IMAGE = "https://via.placeholder.com/600x800?text=No+Image";
 
@@ -148,6 +150,7 @@ public class ProductService {
                 .image(imageUrls.isEmpty() ? PLACEHOLDER_IMAGE : imageUrls.get(0))
                 .images(imageUrls)
                 .specs(specsList)
+                .reviews(reviewService.getProductReviews(p.getId()))
                 .build();
     }
 }
