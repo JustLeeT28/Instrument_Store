@@ -11,7 +11,7 @@ import {
   RegisterPage,
 } from './pages';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminDashboard, ProductManagement } from './pages';
+import { AdminDashboard, ProductManagement, UserManagement } from './pages';
 import './App.css';
 
 function AppContent() {
@@ -29,20 +29,19 @@ function AppContent() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/favorite" element={<FavoritePage />} />
-          
-          {/* Bảo vệ các tuyến đường Admin */}
-          <Route 
-            path="/admin/*" 
+
+          <Route
+            path="/admin/*"
             element={
               <ProtectedRoute requiredRole="ADMIN">
                 <AdminDashboard />
               </ProtectedRoute>
             }
           >
-            <Route index element={<div>Thống kê doanh thu (chưa triển khai)</div>} />
+            <Route index element={<div>Thong ke doanh thu (chua trien khai)</div>} />
             <Route path="products" element={<ProductManagement />} />
-            <Route path="users" element={<div>Quản lý tài khoản (chưa triển khai)</div>} />
-            <Route path="vouchers" element={<div>Quản lý voucher (chưa triển khai)</div>} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="vouchers" element={<div>Quan ly voucher (chua trien khai)</div>} />
           </Route>
 
           <Route path="/login" element={<LoginPage />} />

@@ -2,13 +2,21 @@ package com.store.be_api.user;
 
 import com.store.be_api.auth.dto.UserResponse;
 import com.store.be_api.auth.dto.AddressResponse;
+import com.store.be_api.user.dto.AdminUpdateUserRoleRequest;
+import com.store.be_api.user.dto.AdminUpdateUserStatusRequest;
 import com.store.be_api.user.dto.UpdateUserRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +29,51 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserController {
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<UserResponse> listUsers() {
+        return userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(user -> UserResponse.fromUser(user, null))
+                .toList();
+    }
+
+    @PatchMapping("/admin/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse updateUserRole(
+            @PathVariable UUID id,
+            @Valid @RequestBody AdminUpdateUserRoleRequest request
+    ) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        user.setRole(request.getRole());
+        User savedUser = userRepository.save(user);
+        return UserResponse.fromUser(savedUser, null);
+    }
+
+    @PatchMapping("/admin/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse updateUserStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody AdminUpdateUserStatusRequest request,
+            Authentication authentication
+    ) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (authentication != null
+                && authentication.getName() != null
+                && authentication.getName().equalsIgnoreCase(user.getEmail())
+                && Boolean.FALSE.equals(request.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Admin cannot lock their own account");
+        }
+
+        user.setStatus(request.getStatus());
+        User savedUser = userRepository.save(user);
+        return UserResponse.fromUser(savedUser, null);
+    }
 
     @GetMapping("/me")
     public UserResponse me(Authentication authentication) {

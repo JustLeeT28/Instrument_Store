@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll()
+                .requestMatchers("/users/admin", "/users/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**", "/api/products", "/api/products/**", "/products", "/products/**").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/products/**").permitAll()
                 .requestMatchers("/error").permitAll()
@@ -54,7 +55,7 @@ public class SecurityConfig {
         ));
         // allow origin patterns as a fallback during local development
         configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
