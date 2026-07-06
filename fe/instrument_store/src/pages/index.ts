@@ -9,3 +9,4 @@ export { RegisterPage } from './RegisterPage';
 export { AdminDashboard } from './AdminDashboard';
 export { ProductManagement } from './admin/ProductManagement';
 export { UserManagement } from './admin/UserManagement';
+export { OrderHistoryPage } from './OrderHistoryPage';

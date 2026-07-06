@@ -241,13 +241,13 @@ export const ProfilePage = () => {
               <span className="material-symbols-outlined text-lg">person</span>
               Thông tin cá nhân
             </a>
-            <a
+            <Link
               className="flex items-center gap-4 rounded-2xl px-4 py-3 font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-              href="#recent-orders"
+              to="/orders"
             >
               <span className="material-symbols-outlined">history</span>
               Lịch sử đơn hàng
-            </a>
+            </Link>
             <Link
               className="flex items-center gap-4 rounded-2xl px-4 py-3 font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
               to="/favorite"
@@ -362,9 +362,9 @@ export const ProfilePage = () => {
           >
             <div className="mb-8 flex flex-col gap-3 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-3xl font-semibold text-slate-900">Đơn hàng gần đây</h3>
-              <a className="text-sm font-semibold text-amber-600 underline-offset-4 hover:text-amber-700 hover:underline" href="#">
+              <Link className="text-sm font-semibold text-amber-600 underline-offset-4 hover:text-amber-700 hover:underline" to="/orders">
                 Xem tất cả
-              </a>
+              </Link>
             </div>
 
             <div className="space-y-4">

@@ -9,6 +9,7 @@ import {
   FavoritePage,
   LoginPage,
   RegisterPage,
+  OrderHistoryPage,
 } from './pages';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminDashboard, ProductManagement, UserManagement } from './pages';
@@ -29,6 +30,7 @@ function AppContent() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/favorite" element={<FavoritePage />} />
+          <Route path="/orders" element={<OrderHistoryPage />} />
 
           <Route
             path="/admin/*"
