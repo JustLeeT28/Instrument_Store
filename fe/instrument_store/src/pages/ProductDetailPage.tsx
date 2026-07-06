@@ -4,6 +4,8 @@ import { API_BASE } from '../services/api';
 import { isAuthenticated } from '../services/auth';
 import { addFavorite, fetchFavoriteStatus, removeFavorite } from '../services/favorites';
 import { addCartItem } from '../services/cart';
+import { createReview } from '../services/reviews';
+import type { Review, CreateReviewPayload } from '../services/reviews';
 
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/600x800?text=No+Image';
 
@@ -18,6 +20,12 @@ export const ProductDetailPage = () => {
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -80,20 +88,58 @@ export const ProductDetailPage = () => {
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!product?.id || cartLoading) return;
+   const handleAddToCart = async () => {
+     if (!product?.id || cartLoading) return;
 
-    try {
-      setCartLoading(true);
-      setCartMessage(null);
-      await addCartItem(product.id, 1);
-      setCartMessage('Đã thêm vào giỏ hàng');
-    } catch (err) {
-      setCartMessage(err instanceof Error ? err.message : 'Không thêm được vào giỏ hàng');
-    } finally {
-      setCartLoading(false);
-    }
-  };
+     try {
+       setCartLoading(true);
+       setCartMessage(null);
+       await addCartItem(product.id, 1);
+       setCartMessage('Đã thêm vào giỏ hàng');
+     } catch (err) {
+       setCartMessage(err instanceof Error ? err.message : 'Không thêm được vào giỏ hàng');
+     } finally {
+       setCartLoading(false);
+     }
+   };
+
+   const handleSubmitReview = async () => {
+     if (!product?.id || reviewLoading) return;
+
+     if (!reviewTitle.trim() || !reviewContent.trim()) {
+       setReviewMessage('Vui lòng nhập tiêu đề và nội dung đánh giá');
+       return;
+     }
+
+     try {
+       setReviewLoading(true);
+       setReviewMessage(null);
+       const payload: CreateReviewPayload = {
+         rating: reviewRating,
+         title: reviewTitle,
+         content: reviewContent,
+       };
+       await createReview(product.id, payload);
+       setReviewMessage('Đánh giá đã được gửi thành công');
+       setReviewTitle('');
+       setReviewContent('');
+       setReviewRating(5);
+       setShowReviewForm(false);
+       // Reload product to get updated reviews
+       const resp = await fetch(`${API_BASE}/products/slug/${encodeURIComponent(slug as string)}`);
+       if (resp.ok) {
+         const data = await resp.json();
+         const images = Array.isArray(data.images) && data.images.length > 0
+           ? data.images
+           : [data.image ?? PLACEHOLDER_IMAGE];
+         setProduct({ ...data, image: data.image ?? images[0], images });
+       }
+     } catch (err) {
+       setReviewMessage(err instanceof Error ? err.message : 'Không gửi được đánh giá');
+     } finally {
+       setReviewLoading(false);
+     }
+   };
 
   if (loading) return <div className="p-8">Đang tải...</div>;
   if (!product) return <div className="p-8">Sản phẩm không tồn tại.</div>;
@@ -286,38 +332,109 @@ export const ProductDetailPage = () => {
                 </div>
               </div>
             </div>
-            <button className="px-8 py-4 border-2 border-slate-900 text-slate-900 font-semibold rounded-lg hover:bg-slate-900 hover:text-white transition-colors">
-              Viết đánh giá
-            </button>
+             <button 
+               onClick={() => {
+                 if (!isAuthenticated()) {
+                   navigate('/login');
+                   return;
+                 }
+                 setShowReviewForm(!showReviewForm);
+               }}
+               className="px-8 py-4 border-2 border-slate-900 text-slate-900 font-semibold rounded-lg hover:bg-slate-900 hover:text-white transition-colors"
+             >
+               {showReviewForm ? 'Hủy' : 'Viết đánh giá'}
+             </button>
           </div>
 
-          {/* Review Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {product.reviews?.map((review: any) => (
-              <div key={review.id} className="bg-white p-8 rounded-2xl shadow-md border border-slate-100 flex flex-col justify-between h-full">
-                <div className="space-y-4">
-                  <div className="flex text-amber-500">
-                    {Array.from({ length: review.rating }).map((_, i) => (
-                      <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        star
-                      </span>
-                    ))}
-                  </div>
-                  <h4 className="text-lg font-semibold text-slate-900">{review.title}</h4>
-                  <p className="text-sm text-slate-700 italic">{review.content}</p>
-                </div>
-                <div className="mt-8 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-900 font-semibold text-xs">
-                    {review.author.split(' ').map((n: string) => n[0]).join('')}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900 text-sm">{review.author}</p>
-                    <p className="text-xs text-slate-600">{review.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+           {/* Review Form */}
+           {showReviewForm && (
+             <div className="mb-8 p-8 bg-slate-50 rounded-2xl border border-slate-200">
+               <h3 className="text-lg font-semibold text-slate-900 mb-6">Viết đánh giá của bạn</h3>
+               <div className="space-y-4">
+                 <div>
+                   <label className="text-sm font-semibold text-slate-900 block mb-2">Đánh giá (1-5 sao)</label>
+                   <div className="flex gap-2">
+                     {[1, 2, 3, 4, 5].map((star) => (
+                       <button
+                         key={star}
+                         onClick={() => setReviewRating(star)}
+                         className="text-3xl transition-colors"
+                         type="button"
+                       >
+                         <span 
+                           className="material-symbols-outlined"
+                           style={{ 
+                             fontVariationSettings: star <= reviewRating ? "'FILL' 1" : undefined,
+                             color: star <= reviewRating ? '#FFA500' : '#D1D5DB'
+                           }}
+                         >
+                           star
+                         </span>
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+                 <div>
+                   <label className="text-sm font-semibold text-slate-900 block mb-2">Tiêu đề</label>
+                   <input
+                     type="text"
+                     value={reviewTitle}
+                     onChange={(e) => setReviewTitle(e.target.value)}
+                     placeholder="Nhập tiêu đề đánh giá"
+                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                   />
+                 </div>
+                 <div>
+                   <label className="text-sm font-semibold text-slate-900 block mb-2">Nội dung</label>
+                   <textarea
+                     value={reviewContent}
+                     onChange={(e) => setReviewContent(e.target.value)}
+                     placeholder="Nhập nội dung đánh giá"
+                     rows={4}
+                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                   />
+                 </div>
+                 <button
+                   onClick={handleSubmitReview}
+                   disabled={reviewLoading}
+                   className="w-full bg-slate-900 text-white font-semibold py-3 rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                 >
+                   {reviewLoading ? 'Đang gửi...' : 'Gửi đánh giá'}
+                 </button>
+                 {reviewMessage && (
+                   <p className="text-center text-sm text-slate-600">{reviewMessage}</p>
+                 )}
+               </div>
+             </div>
+           )}
+
+           {/* Review Cards */}
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+             {product.reviews?.map((review: Review) => (
+               <div key={review.id} className="bg-white p-8 rounded-2xl shadow-md border border-slate-100 flex flex-col justify-between h-full">
+                 <div className="space-y-4">
+                   <div className="flex text-amber-500">
+                     {Array.from({ length: review.rating }).map((_, i) => (
+                       <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                         star
+                       </span>
+                     ))}
+                   </div>
+                   <h4 className="text-lg font-semibold text-slate-900">{review.title}</h4>
+                   <p className="text-sm text-slate-700 italic">{review.content}</p>
+                 </div>
+                 <div className="mt-8 flex items-center gap-4">
+                   <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-900 font-semibold text-xs">
+                     {review.userName.split(' ').map((n: string) => n[0]).join('')}
+                   </div>
+                   <div>
+                     <p className="font-semibold text-slate-900 text-sm">{review.userName}</p>
+                     <p className="text-xs text-slate-600">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
+                   </div>
+                 </div>
+               </div>
+             ))}
+           </div>
         </section>
       </main>
     </div>
