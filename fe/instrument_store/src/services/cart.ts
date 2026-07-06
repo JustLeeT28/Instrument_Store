@@ -43,14 +43,21 @@ async function readErrorMessage(res: Response) {
   return text || 'Co loi xay ra';
 }
 
-const jsonHeaders = {
-  Accept: 'application/json',
-};
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Vui long dang nhap');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
 
 export async function fetchCart(): Promise<CartResponse> {
   const res = await fetch(`${API_BASE}/cart`, {
-    headers: jsonHeaders,
-    credentials: 'include',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));
@@ -60,8 +67,7 @@ export async function fetchCart(): Promise<CartResponse> {
 export async function updateCartItem(productId: string, quantity: number): Promise<CartResponse> {
   const res = await fetch(`${API_BASE}/cart/items/${productId}?quantity=${encodeURIComponent(quantity)}`, {
     method: 'PUT',
-    headers: jsonHeaders,
-    credentials: 'include',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));
@@ -71,8 +77,7 @@ export async function updateCartItem(productId: string, quantity: number): Promi
 export async function addCartItem(productId: string, quantity = 1): Promise<CartResponse> {
   const res = await fetch(`${API_BASE}/cart/items/${productId}?quantity=${encodeURIComponent(quantity)}`, {
     method: 'POST',
-    headers: jsonHeaders,
-    credentials: 'include',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));
@@ -82,8 +87,7 @@ export async function addCartItem(productId: string, quantity = 1): Promise<Cart
 export async function removeCartItem(productId: string): Promise<CartResponse> {
   const res = await fetch(`${API_BASE}/cart/items/${productId}`, {
     method: 'DELETE',
-    headers: jsonHeaders,
-    credentials: 'include',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));
@@ -93,8 +97,7 @@ export async function removeCartItem(productId: string): Promise<CartResponse> {
 export async function clearCart(): Promise<void> {
   const res = await fetch(`${API_BASE}/cart`, {
     method: 'DELETE',
-    headers: jsonHeaders,
-    credentials: 'include',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok && res.status !== 204) throw new Error(await readErrorMessage(res));
