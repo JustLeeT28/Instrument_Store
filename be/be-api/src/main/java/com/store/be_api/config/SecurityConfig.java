@@ -31,12 +31,13 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll()
                 .requestMatchers("/users/admin", "/users/admin/**").hasRole("ADMIN")
                 .requestMatchers("/coupons/admin", "/coupons/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/products").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**", "/api/products", "/api/products/**", "/products", "/products/**").permitAll()
-                .requestMatchers(HttpMethod.PUT, "/products/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

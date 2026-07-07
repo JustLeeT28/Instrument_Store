@@ -4,8 +4,14 @@ export type ProductItem = {
   id: string;
   name: string;
   slug?: string;
+  brand?: string | null;
+  category?: string | null;
   price: number;
+  rating?: number | null;
+  reviewCount?: number | null;
+  badge?: string | null;
   stockQty?: number | null;
+  description?: string | null;
   image?: string | null;
   images?: string[] | null;
   specs?: Array<Record<string, string>> | null;
@@ -40,6 +46,19 @@ async function readErrorMessage(res: Response) {
   return text || 'Loi server';
 }
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Vui long dang nhap');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+}
+
 export async function fetchProducts(search?: string): Promise<ProductItem[]> {
   const q = search ? `?search=${encodeURIComponent(search)}` : '';
   const res = await fetch(`${API_BASE}/products${q}`, {
@@ -60,13 +79,22 @@ export async function fetchProductById(id: string): Promise<ProductItem> {
   return res.json();
 }
 
+export async function createProduct(payload: ProductUpdatePayload): Promise<ProductItem> {
+  const res = await fetch(`${API_BASE}/products`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
 export async function updateProduct(id: string, payload: ProductUpdatePayload): Promise<ProductItem> {
   const res = await fetch(`${API_BASE}/products/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers: getAuthHeaders(),
     credentials: 'include',
     body: JSON.stringify(payload),
   });

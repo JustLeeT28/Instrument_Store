@@ -43,6 +43,12 @@ public class ProductController {
         return productService.getById(id);
     }
 
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProductDto createProduct(@RequestBody ProductUpdateRequest request) {
+        return productService.createProduct(request);
+    }
+
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ProductDto updateProduct(@PathVariable UUID id, @RequestBody ProductUpdateRequest request) {

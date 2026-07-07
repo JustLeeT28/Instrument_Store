@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
-import { fetchProducts, updateProduct, type ProductItem as ServiceProductItem } from '../../services/products';
+import {
+  createProduct,
+  fetchProducts,
+  updateProduct,
+  type ProductItem as ServiceProductItem,
+} from '../../services/products';
 
-// Định nghĩa Interface riêng cho trang Admin để mở rộng thêm các trường UI cần thiết
-// và tránh xung đột với định nghĩa gốc từ Service
 export interface AdminProductItem {
   id: string;
   name: string;
@@ -14,10 +17,10 @@ export interface AdminProductItem {
   reviewCount?: number | null;
   badge?: string | null;
   stockQty?: number | null;
-  description?: string;
-  image?: string; // URL ảnh chính
-  images?: string[]; // Mảng các URL hình ảnh
-  specs?: Record<string, any>; // Để chuẩn bị cho phần thông số kỹ thuật
+  description?: string | null;
+  image?: string | null;
+  images?: string[] | null;
+  specs?: Array<Record<string, string>> | null;
 }
 
 interface ProductImage {
@@ -30,21 +33,68 @@ interface SpecItem {
   value: string;
 }
 
-// Mở rộng interface cho form chỉnh sửa
 interface EditProductData extends Omit<AdminProductItem, 'images' | 'specs'> {
+  id: string;
   slug?: string;
-  description?: string;
+  description?: string | null;
   images: ProductImage[];
   specs: SpecItem[];
+  isNew?: boolean;
+}
+
+const emptyProduct: EditProductData = {
+  id: 'new',
+  name: '',
+  slug: '',
+  description: '',
+  price: 0,
+  stockQty: 0,
+  image: null,
+  images: [],
+  specs: [],
+  isNew: true,
+};
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function toEditProduct(product: AdminProductItem): EditProductData {
+  const normalizedImages: ProductImage[] = (product.images ?? []).map(image => ({
+    url: image,
+    isPrimary: image === product.image,
+  }));
+
+  if (normalizedImages.length === 0 && product.image) {
+    normalizedImages.push({ url: product.image, isPrimary: true });
+  }
+
+  const normalizedSpecs: SpecItem[] = Array.isArray(product.specs)
+    ? product.specs.map(spec => ({
+        key: spec.key ?? '',
+        value: spec.value ?? '',
+      }))
+    : [];
+
+  return {
+    ...product,
+    slug: product.slug ?? '',
+    description: product.description ?? '',
+    images: normalizedImages,
+    specs: normalizedSpecs,
+  };
 }
 
 export function ProductManagement() {
   const [query, setQuery] = useState('');
+  const [stockFilter, setStockFilter] = useState<'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK'>('ALL');
   const [products, setProducts] = useState<AdminProductItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State cho cửa sổ Edit
   const [editingProduct, setEditingProduct] = useState<EditProductData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -52,53 +102,82 @@ export function ProductManagement() {
   const [newImgLink, setNewImgLink] = useState('');
 
   useEffect(() => {
+    let mounted = true;
+
     setLoading(true);
     fetchProducts()
-      .then((data) => setProducts(data as unknown as AdminProductItem[]))
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false));
+      .then(data => {
+        if (!mounted) return;
+        setProducts(data as unknown as AdminProductItem[]);
+        setError(null);
+      })
+      .catch(err => {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : 'Khong the tai danh sach san pham');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(p => p.name.toLowerCase().includes(q));
-  }, [products, query]);
-
-  const handleEdit = (p: AdminProductItem) => {
-    // Chuẩn hóa dữ liệu ảnh sang dạng Object để dễ quản lý local
-    const normalizedImages: ProductImage[] = (p.images || []).map(img => 
-      typeof img === 'string' ? { url: img, isPrimary: img === p.image } : img
+  const stats = useMemo(() => {
+    return products.reduce(
+      (result, product) => {
+        const stock = product.stockQty ?? 0;
+        result.total += 1;
+        result.inventory += stock;
+        result.value += stock * (product.price ?? 0);
+        if (stock === 0) result.outOfStock += 1;
+        if (stock > 0 && stock <= 5) result.lowStock += 1;
+        return result;
+      },
+      { total: 0, inventory: 0, value: 0, lowStock: 0, outOfStock: 0 }
     );
+  }, [products]);
 
-    if (normalizedImages.length === 0 && p.image) {
-      normalizedImages.push({ url: p.image, isPrimary: true });
-    }
+  const filtered = useMemo(() => {
+    const keyword = query.trim().toLowerCase();
 
-    // Specs là Array rồi, không cần convert
-    const normalizedSpecs: SpecItem[] = Array.isArray(p.specs) 
-      ? (p.specs as any[]).map(spec => ({
-          key: spec.key || '',
-          value: spec.value || ''
-        }))
-      : [];
+    return products.filter(product => {
+      const stock = product.stockQty ?? 0;
+      const matchesText =
+        !keyword ||
+        product.name.toLowerCase().includes(keyword) ||
+        (product.slug ?? '').toLowerCase().includes(keyword) ||
+        (product.brand ?? '').toLowerCase().includes(keyword) ||
+        (product.category ?? '').toLowerCase().includes(keyword);
+      const matchesStock =
+        stockFilter === 'ALL' ||
+        (stockFilter === 'IN_STOCK' && stock > 5) ||
+        (stockFilter === 'LOW_STOCK' && stock > 0 && stock <= 5) ||
+        (stockFilter === 'OUT_OF_STOCK' && stock === 0);
 
-    setEditingProduct({
-      ...p,
-      slug: p.slug || '',
-      description: p.description || '',
-      images: normalizedImages,
-      specs: normalizedSpecs
+      return matchesText && matchesStock;
     });
+  }, [products, query, stockFilter]);
+
+  const handleAddNew = () => {
+    setUploadImageError(null);
+    setNewImgLink('');
+    setEditingProduct({ ...emptyProduct, images: [], specs: [] });
+  };
+
+  const handleEdit = (product: AdminProductItem) => {
+    setUploadImageError(null);
+    setNewImgLink('');
+    setEditingProduct(toEditProduct(product));
   };
 
   const handleAddImage = () => {
     if (!newImgLink.trim() || !editingProduct) return;
-    const hasPrimary = editingProduct.images.some(img => img.isPrimary);
-    const isPrimary = editingProduct.images.length === 0 || !hasPrimary;
+    const hasPrimary = editingProduct.images.some(image => image.isPrimary);
     setEditingProduct({
       ...editingProduct,
-      images: [...editingProduct.images, { url: newImgLink.trim(), isPrimary }]
+      images: [...editingProduct.images, { url: newImgLink.trim(), isPrimary: editingProduct.images.length === 0 || !hasPrimary }],
     });
     setNewImgLink('');
     setUploadImageError(null);
@@ -109,7 +188,7 @@ export function ProductManagement() {
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset) {
-      throw new Error('Thiếu cấu hình Cloudinary. Vui lòng thêm VITE_CLOUDINARY_CLOUD_NAME và VITE_CLOUDINARY_UPLOAD_PRESET vào file .env');
+      throw new Error('Thieu cau hinh Cloudinary trong file .env');
     }
 
     const formData = new FormData();
@@ -124,7 +203,7 @@ export function ProductManagement() {
 
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(errorText || 'Upload ảnh lên Cloudinary thất bại');
+      throw new Error(errorText || 'Upload anh len Cloudinary that bai');
     }
 
     const data = await res.json();
@@ -140,10 +219,10 @@ export function ProductManagement() {
 
     try {
       const uploadedUrls = await Promise.all(files.map(file => uploadImageToCloudinary(file)));
-      const hasPrimary = editingProduct.images.some(img => img.isPrimary);
 
       setEditingProduct(prev => {
         if (!prev) return prev;
+        const hasPrimary = prev.images.some(image => image.isPrimary);
         return {
           ...prev,
           images: [
@@ -151,12 +230,12 @@ export function ProductManagement() {
             ...uploadedUrls.map((url, index) => ({
               url,
               isPrimary: prev.images.length === 0 && !hasPrimary && index === 0,
-            }))
-          ]
+            })),
+          ],
         };
       });
-    } catch (error) {
-      setUploadImageError(error instanceof Error ? error.message : 'Upload ảnh thất bại');
+    } catch (err) {
+      setUploadImageError(err instanceof Error ? err.message : 'Upload anh that bai');
     } finally {
       setIsUploadingImage(false);
       event.target.value = '';
@@ -165,53 +244,48 @@ export function ProductManagement() {
 
   const setPrimaryImage = (index: number) => {
     if (!editingProduct) return;
-    const updated = editingProduct.images.map((img, i) => ({
-      ...img,
-      isPrimary: i === index
-    }));
-    setEditingProduct({ ...editingProduct, images: updated });
+    setEditingProduct({
+      ...editingProduct,
+      images: editingProduct.images.map((image, imageIndex) => ({
+        ...image,
+        isPrimary: imageIndex === index,
+      })),
+    });
   };
 
   const removeImage = (index: number) => {
     if (!editingProduct) return;
-    const updated = editingProduct.images.filter((_, i) => i !== index);
-    if (updated.length > 0 && !updated.some(img => img.isPrimary)) {
-      updated[0].isPrimary = true;
+    const updated = editingProduct.images.filter((_, imageIndex) => imageIndex !== index);
+    if (updated.length > 0 && !updated.some(image => image.isPrimary)) {
+      updated[0] = { ...updated[0], isPrimary: true };
     }
     setEditingProduct({ ...editingProduct, images: updated });
   };
 
-  // Logic xử lý Specs
   const addSpec = () => {
     if (!editingProduct) return;
-    setEditingProduct({
-      ...editingProduct,
-      specs: [...editingProduct.specs, { key: '', value: '' }]
-    });
+    setEditingProduct({ ...editingProduct, specs: [...editingProduct.specs, { key: '', value: '' }] });
   };
 
-  const updateSpec = (index: number, field: 'key' | 'value', val: string) => {
+  const updateSpec = (index: number, field: 'key' | 'value', value: string) => {
     if (!editingProduct) return;
-    const newSpecs = [...editingProduct.specs];
-    newSpecs[index] = { ...newSpecs[index], [field]: val };
-    setEditingProduct({ ...editingProduct, specs: newSpecs });
+    const specs = [...editingProduct.specs];
+    specs[index] = { ...specs[index], [field]: value };
+    setEditingProduct({ ...editingProduct, specs });
   };
 
   const removeSpec = (index: number) => {
     if (!editingProduct) return;
-    setEditingProduct({
-      ...editingProduct,
-      specs: editingProduct.specs.filter((_, i) => i !== index)
-    });
+    setEditingProduct({ ...editingProduct, specs: editingProduct.specs.filter((_, specIndex) => specIndex !== index) });
   };
 
   const moveSpec = (index: number, direction: 'up' | 'down') => {
     if (!editingProduct) return;
-    const newSpecs = [...editingProduct.specs];
+    const specs = [...editingProduct.specs];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newSpecs.length) return;
-    [newSpecs[index], newSpecs[targetIndex]] = [newSpecs[targetIndex], newSpecs[index]];
-    setEditingProduct({ ...editingProduct, specs: newSpecs });
+    if (targetIndex < 0 || targetIndex >= specs.length) return;
+    [specs[index], specs[targetIndex]] = [specs[targetIndex], specs[index]];
+    setEditingProduct({ ...editingProduct, specs });
   };
 
   const handleSave = async () => {
@@ -220,254 +294,370 @@ export function ProductManagement() {
     setError(null);
 
     try {
-      const specsArray = editingProduct.specs
-        .filter(spec => spec.key.trim())
-        .map(spec => ({ key: spec.key.trim(), value: spec.value }));
-
       const payload = {
-        name: editingProduct.name,
-        slug: editingProduct.slug,
-        description: editingProduct.description,
+        name: editingProduct.name.trim(),
+        slug: editingProduct.slug?.trim() || undefined,
+        description: editingProduct.description ?? '',
         price: editingProduct.price,
         stockQty: editingProduct.stockQty ?? 0,
         images: editingProduct.images.map(({ url, isPrimary }) => ({ imageUrl: url, isPrimary })),
-        specs: specsArray,
+        specs: editingProduct.specs
+          .filter(spec => spec.key.trim())
+          .map(spec => ({ key: spec.key.trim(), value: spec.value })),
       };
 
-      const updatedProduct = await updateProduct(editingProduct.id, payload);
-      setProducts(prev => prev.map(item => item.id === editingProduct.id ? {
-        ...item,
-        name: updatedProduct.name ?? item.name,
-        slug: updatedProduct.slug ?? item.slug,
-        price: updatedProduct.price ?? item.price,
-        stockQty: updatedProduct.stockQty ?? item.stockQty,
-        image: updatedProduct.image ?? updatedProduct.images?.[0] ?? item.image,
-        images: updatedProduct.images ?? item.images ?? [],
-        specs: updatedProduct.specs ?? item.specs,
-      } : item));
+      const savedProduct: ServiceProductItem = editingProduct.isNew
+        ? await createProduct(payload)
+        : await updateProduct(editingProduct.id, payload);
+
+      setProducts(prev => {
+        const nextProduct = savedProduct as unknown as AdminProductItem;
+        return editingProduct.isNew
+          ? [nextProduct, ...prev]
+          : prev.map(item => (item.id === editingProduct.id ? nextProduct : item));
+      });
       setEditingProduct(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không thể lưu sản phẩm');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Khong the luu san pham');
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       <style>{`
         @keyframes slideDown {
-          from { transform: translateY(-40px); opacity: 0; }
+          from { transform: translateY(-24px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        .window-drop { animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .window-drop { animation: slideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .field-input {
+          width: 100%;
+          border-radius: 0.5rem;
+          border: 1px solid rgb(226 232 240);
+          background: white;
+          padding: 0.75rem 0.875rem;
+          color: rgb(15 23 42);
+          outline: none;
+          transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+        .field-input:focus {
+          border-color: rgb(245 158 11);
+          box-shadow: 0 0 0 3px rgb(254 243 199);
+        }
       `}</style>
 
-      <h2 className="text-2xl font-semibold mb-4">Quản lý sản phẩm</h2>
-
-      <div className="mb-4 flex">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Tìm theo tên sản phẩm"
-          className="flex-1 border p-2 rounded mr-2"
-        />
-        <button onClick={() => {}} className="px-4 py-2 bg-indigo-600 text-white rounded">Tìm</button>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-amber-700">Admin</p>
+          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quan ly san pham</h2>
+          <p className="mt-2 text-sm text-slate-500">Theo doi ton kho, gia ban va cap nhat noi dung san pham.</p>
+        </div>
+        <button
+          onClick={handleAddNew}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600"
+        >
+          <span className="material-symbols-outlined text-[20px]">add</span>
+          Thêm sản phẩm
+        </button>
       </div>
 
-      {loading && <div>Đang tải...</div>}
-      {error && <div className="text-red-600">{error}</div>}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <StatBox label="Tong san pham" value={stats.total.toLocaleString('vi-VN')} />
+        <StatBox label="Ton kho" value={stats.inventory.toLocaleString('vi-VN')} />
+        <StatBox label="Gia tri kho" value={formatCurrency(stats.value)} />
+        <StatBox label="Sap het" value={stats.lowStock.toLocaleString('vi-VN')} tone="amber" />
+        <StatBox label="Het hang" value={stats.outOfStock.toLocaleString('vi-VN')} tone="red" />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {filtered.map(p => (
-          <div key={p.id} className="flex items-center bg-white shadow-sm p-4 rounded">
-            <img src={p.image || '/favicon.svg'} alt="" className="w-20 h-20 object-cover rounded mr-4" />
-            <div className="flex-1">
-              <div className="font-medium">{p.name}</div>
-              <div className="text-sm text-gray-600">Giá: {p.price.toLocaleString()} VND</div>
-              <div className="text-sm text-gray-600">Số lượng: {p.stockQty ?? 0}</div>
-            </div>
-            <div>
-              <button onClick={() => handleEdit(p)} className="px-3 py-1 border rounded hover:bg-slate-50 transition shadow-sm">Edit</button>
-            </div>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+          <div className="relative">
+            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400">search</span>
+            <input
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+              placeholder="Tim theo ten, slug, thuong hieu hoac danh muc"
+              className="w-full rounded-md border border-slate-200 py-3 pl-10 pr-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+            />
           </div>
-        ))}
+          <select
+            value={stockFilter}
+            onChange={event => setStockFilter(event.target.value as typeof stockFilter)}
+            className="rounded-md border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+          >
+            <option value="ALL">Tat ca ton kho</option>
+            <option value="IN_STOCK">Con hang</option>
+            <option value="LOW_STOCK">Sap het hang</option>
+            <option value="OUT_OF_STOCK">Het hang</option>
+          </select>
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        )}
       </div>
 
-      {/* Cửa sổ Edit (Overlay & Modal) */}
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
+            <thead className="bg-slate-50 text-xs uppercase tracking-widest text-slate-500">
+              <tr>
+                <th className="px-5 py-4 font-bold">San pham</th>
+                <th className="px-5 py-4 font-bold">Phan loai</th>
+                <th className="px-5 py-4 font-bold">Gia ban</th>
+                <th className="px-5 py-4 font-bold">Ton kho</th>
+                <th className="px-5 py-4 font-bold">Danh gia</th>
+                <th className="px-5 py-4 text-right font-bold">Thao tac</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">Dang tai danh sach san pham...</td>
+                </tr>
+              )}
+
+              {!loading && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">Khong co san pham phu hop.</td>
+                </tr>
+              )}
+
+              {!loading && filtered.map(product => {
+                const stock = product.stockQty ?? 0;
+                const stockTone =
+                  stock === 0
+                    ? 'bg-red-50 text-red-700'
+                    : stock <= 5
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-emerald-50 text-emerald-700';
+
+                return (
+                  <tr key={product.id} className="transition hover:bg-slate-50/70">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={product.image || '/favicon.svg'}
+                          alt={product.name}
+                          className="h-16 w-16 shrink-0 rounded-lg border border-slate-100 bg-slate-50 object-contain p-1"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-950">{product.name}</p>
+                          <p className="truncate text-xs text-slate-500">{product.slug || 'Chua co slug'}</p>
+                          <p className="mt-1 line-clamp-1 text-xs text-slate-400">{product.description || 'Chua co mo ta'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-slate-600">
+                      <p className="font-medium text-slate-800">{product.brand || 'Chua co hang'}</p>
+                      <p className="text-xs text-slate-400">{product.category || 'Chua co danh muc'}</p>
+                    </td>
+                    <td className="px-5 py-4 font-semibold text-slate-950">{formatCurrency(product.price)}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${stockTone}`}>
+                        <span className="h-2 w-2 rounded-full bg-current" />
+                        {stock.toLocaleString('vi-VN')}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-slate-500">
+                      <div className="inline-flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[18px] text-amber-500">star</span>
+                        <span>{product.rating ?? 0}</span>
+                        <span className="text-xs text-slate-400">({product.reviewCount ?? 0})</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        Sua
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-sm pt-6 px-4 pb-12 overflow-y-auto">
-          <div className="window-drop bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col">
-            <div className="p-8 md:p-10 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/60 px-4 pb-12 pt-6 backdrop-blur-sm">
+          <div className="window-drop flex w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 p-6 md:p-8">
               <div>
-                <h3 className="text-3xl font-bold text-slate-900">Thông tin chi tiết</h3>
-                <p className="text-xs text-slate-400 font-mono tracking-wider mt-1 uppercase">ID: {editingProduct.id}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-700">
+                  {editingProduct.isNew ? 'Them san pham' : 'Cap nhat san pham'}
+                </p>
+                <h3 className="mt-1 text-2xl font-bold text-slate-950">
+                  {editingProduct.isNew ? 'San pham moi' : editingProduct.name}
+                </h3>
+                {!editingProduct.isNew && (
+                  <p className="mt-1 font-mono text-xs uppercase tracking-wider text-slate-400">ID: {editingProduct.id}</p>
+                )}
               </div>
-              <button onClick={() => setEditingProduct(null)} className="p-3 hover:bg-slate-100 rounded-full transition-colors">
+              <button onClick={() => setEditingProduct(null)} className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950">
                 <span className="material-symbols-outlined text-2xl">close</span>
               </button>
             </div>
 
-            <div className="p-8 md:p-10 space-y-10">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-3">Tên nhạc cụ</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-5 text-slate-900 focus:ring-2 focus:ring-amber-500 transition shadow-inner font-medium"
+            <div className="space-y-8 p-6 md:p-8">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-5">
+                  <FieldLabel label="Ten nhac cu">
+                    <input
+                      type="text"
+                      className="field-input"
                       value={editingProduct.name}
-                      onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
+                      onChange={event => setEditingProduct({ ...editingProduct, name: event.target.value })}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-3">Slug (Đường dẫn)</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-5 text-slate-900 focus:ring-2 focus:ring-amber-500 transition shadow-inner font-mono text-sm"
+                  </FieldLabel>
+                  <FieldLabel label="Slug duong dan">
+                    <input
+                      type="text"
+                      className="field-input font-mono text-sm"
                       value={editingProduct.slug}
-                      onChange={e => setEditingProduct({...editingProduct, slug: e.target.value})}
+                      onChange={event => setEditingProduct({ ...editingProduct, slug: event.target.value })}
                     />
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-3">Giá niêm yết (đ)</label>
-                      <input 
-                        type="number" 
-                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-5 text-slate-900 focus:ring-2 focus:ring-amber-500 transition shadow-inner font-bold"
+                  </FieldLabel>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <FieldLabel label="Gia niem yet">
+                      <input
+                        type="number"
+                        className="field-input font-bold"
                         value={editingProduct.price}
-                        onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})}
+                        onChange={event => setEditingProduct({ ...editingProduct, price: Number(event.target.value) })}
                       />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-3">Tồn kho</label>
-                      <input 
-                        type="number" 
-                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-5 text-slate-900 focus:ring-2 focus:ring-amber-500 transition shadow-inner"
+                    </FieldLabel>
+                    <FieldLabel label="Ton kho">
+                      <input
+                        type="number"
+                        className="field-input"
                         value={editingProduct.stockQty ?? 0}
-                        onChange={e => setEditingProduct({...editingProduct, stockQty: Number(e.target.value)})}
+                        onChange={event => setEditingProduct({ ...editingProduct, stockQty: Number(event.target.value) })}
                       />
-                    </div>
+                    </FieldLabel>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-3">Mô tả sản phẩm</label>
-                  <textarea 
+                <FieldLabel label="Mo ta san pham">
+                  <textarea
                     rows={10}
-                    className="w-full bg-slate-50 border-none rounded-[2rem] px-6 py-5 text-slate-900 focus:ring-2 focus:ring-amber-500 transition shadow-inner resize-none h-full leading-relaxed"
-                    value={editingProduct.description}
-                    onChange={e => setEditingProduct({...editingProduct, description: e.target.value})}
+                    className="field-input min-h-[238px] resize-none leading-relaxed"
+                    value={editingProduct.description ?? ''}
+                    onChange={event => setEditingProduct({ ...editingProduct, description: event.target.value })}
                   />
-                </div>
+                </FieldLabel>
               </div>
 
-              <div className="pt-8 border-t border-slate-100">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-6">Thư viện hình ảnh</label>
-                <div className="flex flex-col gap-4 mb-8">
-                  <div className="flex gap-4">
-                    <input 
-                      type="text" 
-                      placeholder="Dán link hình ảnh mới tại đây..."
-                      className="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-amber-500 transition shadow-inner"
-                      value={newImgLink}
-                      onChange={e => setNewImgLink(e.target.value)}
-                    />
-                    <button onClick={handleAddImage} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-xs hover:bg-amber-600 transition shadow-lg active:scale-95 uppercase tracking-widest">Thêm ảnh</button>
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <label className="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
-                      <span className="material-symbols-outlined text-base">cloud_upload</span>
-                      <span>{isUploadingImage ? 'Đang upload...' : 'Tải ảnh từ máy tính'}</span>
-                      <input type="file" accept="image/*" multiple onChange={handleImageFilesSelected} className="hidden" />
-                    </label>
-                    <p className="text-xs text-slate-500">Ảnh sẽ upload lên Cloudinary rồi lưu URL vào sản phẩm.</p>
-                  </div>
-                  {uploadImageError && <p className="text-sm text-red-600">{uploadImageError}</p>}
+              <div className="border-t border-slate-100 pt-8">
+                <SectionTitle title="Thu vien hinh anh" />
+                <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_auto]">
+                  <input
+                    type="text"
+                    placeholder="Dan link hinh anh moi tai day"
+                    className="field-input"
+                    value={newImgLink}
+                    onChange={event => setNewImgLink(event.target.value)}
+                  />
+                  <button onClick={handleAddImage} className="rounded-md bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-amber-600">
+                    Them anh
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {editingProduct.images.map((img, idx) => (
-                    <div key={idx} className={`group relative rounded-[2.5rem] border-2 transition-all p-4 ${img.isPrimary ? 'border-amber-500 bg-amber-50/30 shadow-md' : 'border-slate-100 bg-white'}`}>
-                      <img src={img.url} alt="" className="w-full aspect-[4/5] object-contain bg-white rounded-3xl mb-4 shadow-sm" />
-                      <div className="space-y-4">
-                        <p className="text-[9px] text-slate-400 truncate px-2 font-mono text-center">{img.url}</p>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => setPrimaryImage(idx)} 
-                            className={`flex-1 text-[9px] font-bold py-2.5 rounded-xl transition-all ${img.isPrimary ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-amber-100'}`}
-                          >
-                            {img.isPrimary ? 'ẢNH CHÍNH' : 'ĐẶT CHÍNH'}
-                          </button>
-                          <button onClick={() => removeImage(idx)} className="bg-red-50 text-red-500 p-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-colors">
-                            <span className="material-symbols-outlined text-sm">delete</span>
-                          </button>
-                        </div>
+                <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="inline-flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+                    <span className="material-symbols-outlined text-base">cloud_upload</span>
+                    <span>{isUploadingImage ? 'Dang upload...' : 'Tai anh tu may tinh'}</span>
+                    <input type="file" accept="image/*" multiple onChange={handleImageFilesSelected} className="hidden" />
+                  </label>
+                  <p className="text-xs text-slate-500">Anh se upload len Cloudinary roi luu URL vao san pham.</p>
+                </div>
+                {uploadImageError && <p className="mb-4 text-sm text-red-600">{uploadImageError}</p>}
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {editingProduct.images.length === 0 && (
+                    <div className="col-span-full rounded-lg border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
+                      Chua co hinh anh nao.
+                    </div>
+                  )}
+                  {editingProduct.images.map((image, index) => (
+                    <div key={`${image.url}-${index}`} className={`rounded-lg border p-3 transition ${image.isPrimary ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200 bg-white'}`}>
+                      <img src={image.url} alt="" className="aspect-[4/5] w-full rounded-md bg-white object-contain p-2" />
+                      <p className="mt-3 truncate font-mono text-[10px] text-slate-400">{image.url}</p>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => setPrimaryImage(index)}
+                          className={`flex-1 rounded-md px-3 py-2 text-[10px] font-bold uppercase transition ${
+                            image.isPrimary ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-amber-100'
+                          }`}
+                        >
+                          {image.isPrimary ? 'Anh chinh' : 'Dat chinh'}
+                        </button>
+                        <button onClick={() => removeImage(index)} className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-500 hover:text-white">
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-10 border-t border-slate-100">
-                <div className="flex justify-between items-center mb-8">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Thông số kỹ thuật</label>
-                  <button 
-                    onClick={addSpec}
-                    className="flex items-center gap-2 px-6 py-3 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors"
-                  >
+              <div className="border-t border-slate-100 pt-8">
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <SectionTitle title="Thong so ky thuat" />
+                  <button onClick={addSpec} className="inline-flex items-center gap-2 rounded-md bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100">
                     <span className="material-symbols-outlined text-sm">add_circle</span>
-                    THÊM THÔNG SỐ
+                    Them thong so
                   </button>
                 </div>
 
-                <div className="overflow-hidden border border-slate-100 rounded-[2rem] bg-white">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50">
+                <div className="overflow-hidden rounded-lg border border-slate-200">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 text-xs uppercase tracking-widest text-slate-500">
                       <tr>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tên thông số (Key)</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giá trị (Value)</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-40 text-center">Thao tác</th>
+                        <th className="px-5 py-4 font-bold">Ten thong so</th>
+                        <th className="px-5 py-4 font-bold">Gia tri</th>
+                        <th className="w-40 px-5 py-4 text-center font-bold">Thao tac</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-100">
                       {editingProduct.specs.length === 0 && (
                         <tr>
-                          <td colSpan={3} className="px-8 py-10 text-center text-slate-400 italic text-sm">Chưa có thông số kỹ thuật nào.</td>
+                          <td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-500">Chua co thong so ky thuat nao.</td>
                         </tr>
                       )}
-                      {editingProduct.specs.map((spec, idx) => (
-                        <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <input 
-                              type="text" 
-                              placeholder="Ví dụ: Chất liệu"
-                              className="w-full bg-transparent border-none focus:ring-0 text-slate-900 font-semibold text-sm placeholder:text-slate-300"
+                      {editingProduct.specs.map((spec, index) => (
+                        <tr key={index} className="transition hover:bg-slate-50/70">
+                          <td className="px-5 py-3">
+                            <input
+                              type="text"
+                              placeholder="Vi du: Chat lieu"
+                              className="w-full rounded-md border border-transparent bg-transparent px-3 py-2 font-semibold outline-none transition focus:border-amber-300 focus:bg-white"
                               value={spec.key}
-                              onChange={e => updateSpec(idx, 'key', e.target.value)}
+                              onChange={event => updateSpec(index, 'key', event.target.value)}
                             />
                           </td>
-                          <td className="px-6 py-4">
-                            <input 
-                              type="text" 
-                              placeholder="Ví dụ: Gỗ Mahogany"
-                              className="w-full bg-transparent border-none focus:ring-0 text-slate-900 text-sm placeholder:text-slate-300"
+                          <td className="px-5 py-3">
+                            <input
+                              type="text"
+                              placeholder="Vi du: Go Mahogany"
+                              className="w-full rounded-md border border-transparent bg-transparent px-3 py-2 outline-none transition focus:border-amber-300 focus:bg-white"
                               value={spec.value}
-                              onChange={e => updateSpec(idx, 'value', e.target.value)}
+                              onChange={event => updateSpec(index, 'value', event.target.value)}
                             />
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => moveSpec(idx, 'up')} disabled={idx === 0} className="p-2 text-slate-400 hover:text-amber-600 disabled:opacity-20">
-                                <span className="material-symbols-outlined text-lg">arrow_upward</span>
-                              </button>
-                              <button onClick={() => moveSpec(idx, 'down')} disabled={idx === editingProduct.specs.length - 1} className="p-2 text-slate-400 hover:text-amber-600 disabled:opacity-20">
-                                <span className="material-symbols-outlined text-lg">arrow_downward</span>
-                              </button>
-                              <button onClick={() => removeSpec(idx)} className="p-2 text-slate-400 hover:text-red-500">
-                                <span className="material-symbols-outlined text-lg">delete</span>
-                              </button>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <IconButton icon="arrow_upward" label="Len" onClick={() => moveSpec(index, 'up')} disabled={index === 0} />
+                              <IconButton icon="arrow_downward" label="Xuong" onClick={() => moveSpec(index, 'down')} disabled={index === editingProduct.specs.length - 1} />
+                              <IconButton icon="delete" label="Xoa" onClick={() => removeSpec(index)} danger />
                             </div>
                           </td>
                         </tr>
@@ -478,16 +668,78 @@ export function ProductManagement() {
               </div>
             </div>
 
-            <div className="p-10 border-t bg-slate-50/30 flex justify-end gap-6 rounded-b-[3rem]">
-              <button onClick={() => setEditingProduct(null)} className="px-10 py-4 font-bold text-slate-400 hover:text-slate-900 transition tracking-widest text-[10px] uppercase">Hủy bỏ</button>
-              <button onClick={handleSave} disabled={isSaving} className="px-16 py-5 bg-slate-900 text-white font-bold rounded-2xl hover:bg-amber-600 transition shadow-2xl active:scale-[0.98] disabled:opacity-50 tracking-widest text-[10px] uppercase">
-                {isSaving ? 'Đang xử lý...' : 'Lưu thay đổi'}
+            <div className="flex flex-col-reverse gap-3 rounded-b-2xl border-t border-slate-100 bg-slate-50/60 p-6 sm:flex-row sm:justify-end">
+              <button onClick={() => setEditingProduct(null)} className="rounded-md px-6 py-3 text-sm font-bold text-slate-500 transition hover:bg-white hover:text-slate-950">
+                Huy bo
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving || !editingProduct.name.trim() || editingProduct.price < 0}
+                className="rounded-md bg-slate-950 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? 'Dang luu...' : editingProduct.isNew ? 'Them san pham' : 'Luu thay doi'}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function StatBox({ label, value, tone = 'slate' }: { label: string; value: string; tone?: 'slate' | 'amber' | 'red' }) {
+  const toneClass = {
+    slate: 'text-slate-950',
+    amber: 'text-amber-700',
+    red: 'text-red-700',
+  }[tone];
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
+
+function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return <h4 className="text-sm font-bold uppercase tracking-widest text-slate-700">{title}</h4>;
+}
+
+function IconButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-md p-2 transition disabled:cursor-not-allowed disabled:opacity-30 ${
+        danger ? 'text-slate-400 hover:bg-red-50 hover:text-red-500' : 'text-slate-400 hover:bg-amber-50 hover:text-amber-600'
+      }`}
+    >
+      <span className="material-symbols-outlined text-lg">{icon}</span>
+    </button>
   );
 }
 

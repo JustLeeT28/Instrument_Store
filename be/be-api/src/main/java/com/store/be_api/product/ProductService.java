@@ -66,6 +66,43 @@ public class ProductService {
     }
 
     @Transactional
+    public ProductDto createProduct(ProductUpdateRequest request) {
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product name is required");
+        }
+        if (request.getPrice() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product price is required");
+        }
+
+        String slug = request.getSlug();
+        if (slug == null || slug.isBlank()) {
+            slug = toSlug(request.getName());
+        }
+        slug = ensureUniqueSlug(slug);
+
+        Product product = Product.builder()
+                .name(request.getName())
+                .slug(slug)
+                .description(request.getDescription())
+                .basePrice(BigDecimal.valueOf(request.getPrice()))
+                .stockQty(request.getStockQty() == null ? 0 : request.getStockQty())
+                .build();
+
+        if (request.getSpecs() != null) {
+            try {
+                product.setSpecs(objectMapper.writeValueAsString(request.getSpecs()));
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid specs payload");
+            }
+        }
+
+        Product savedProduct = productRepository.save(product);
+        List<ProductImage> savedImages = saveImages(savedProduct.getId(), request.getImages());
+        savedProduct.setImages(new java.util.ArrayList<>(savedImages));
+        return toDto(savedProduct);
+    }
+
+    @Transactional
     public ProductDto updateProduct(UUID id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
@@ -87,25 +124,54 @@ public class ProductService {
         productRepository.save(product);
 
         productImageRepository.deleteByProductId(product.getId());
-        List<ProductImage> savedImages = List.of();
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            List<ProductImage> images = request.getImages().stream()
-                    .filter(image -> image.getImageUrl() != null && !image.getImageUrl().isBlank())
-                    .map(image -> ProductImage.builder()
-                            .productId(product.getId())
-                            .imageUrl(image.getImageUrl())
-                            .isPrimary(Boolean.TRUE.equals(image.getIsPrimary()))
-                            .build())
-                    .toList();
-
-            if (!images.isEmpty() && images.stream().noneMatch(ProductImage::getIsPrimary)) {
-                images.get(0).setIsPrimary(true);
-            }
-            savedImages = productImageRepository.saveAll(images);
-        }
+        List<ProductImage> savedImages = saveImages(product.getId(), request.getImages());
 
         product.setImages(new java.util.ArrayList<>(savedImages));
         return toDto(product);
+    }
+
+    private List<ProductImage> saveImages(UUID productId, List<ProductUpdateRequest.ProductImagePayload> payloadImages) {
+        if (payloadImages == null || payloadImages.isEmpty()) {
+            return List.of();
+        }
+
+        List<ProductImage> images = payloadImages.stream()
+                .filter(image -> image.getImageUrl() != null && !image.getImageUrl().isBlank())
+                .map(image -> ProductImage.builder()
+                        .productId(productId)
+                        .imageUrl(image.getImageUrl())
+                        .isPrimary(Boolean.TRUE.equals(image.getIsPrimary()))
+                        .build())
+                .toList();
+
+        if (!images.isEmpty() && images.stream().noneMatch(ProductImage::getIsPrimary)) {
+            images.get(0).setIsPrimary(true);
+        }
+
+        return images.isEmpty() ? List.of() : productImageRepository.saveAll(images);
+    }
+
+    private String ensureUniqueSlug(String slug) {
+        String base = toSlug(slug);
+        String candidate = base;
+        int suffix = 2;
+
+        while (productRepository.findBySlug(candidate).isPresent()) {
+            candidate = base + "-" + suffix;
+            suffix += 1;
+        }
+
+        return candidate;
+    }
+
+    private String toSlug(String value) {
+        String slug = java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+
+        return slug.isBlank() ? "san-pham" : slug;
     }
 
     private ProductDto toDto(Product p) {
