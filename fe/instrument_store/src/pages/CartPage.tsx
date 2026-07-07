@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { API_BASE } from '../services/api';
 import { fetchCart, removeCartItem, updateCartItem, type CartItem, type CartResponse } from '../services/cart';
+import { checkout } from '../services/orders';
 import type { Product } from '../components/ProductCard';
 
 const formatCurrency = (value: number) =>
@@ -16,11 +17,14 @@ const fallbackImage = 'https://via.placeholder.com/600x800?text=No+Image';
 const recommendationScore = (product: Product) => (product.rating ?? 0) * 100 + product.price / 1_000_000;
 
 export const CartPage = () => {
+  const navigate = useNavigate();
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     let mounted = true;
@@ -54,6 +58,8 @@ export const CartPage = () => {
         if (!mounted) return;
 
         setCart(cartResponse);
+        // Auto-select all items on first load
+        setSelectedIds(new Set(cartResponse.items.map((i) => i.product.id)));
         setRecommendations(
           productsData
             .map((product) => ({
@@ -88,11 +94,43 @@ export const CartPage = () => {
   }, []);
 
   const cartItems = cart?.items ?? [];
-  const itemCount = cart?.itemCount ?? 0;
-  const subtotal = cart?.subtotal ?? 0;
+
+  const selectedItems = useMemo(
+    () => cartItems.filter((item) => selectedIds.has(item.product.id)),
+    [cartItems, selectedIds],
+  );
+
+  const selectedCount = selectedItems.length;
+  const selectedSubtotal = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + (item.lineTotal ?? 0), 0),
+    [selectedItems],
+  );
   const shipping = 0;
   const vat = 0;
-  const total = subtotal + shipping + vat;
+  const total = selectedSubtotal + shipping + vat;
+  const allSelected = cartItems.length > 0 && selectedIds.size === cartItems.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < cartItems.length;
+
+  const toggleItem = useCallback((productId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === cartItems.length) {
+        return new Set();
+      }
+      return new Set(cartItems.map((i) => i.product.id));
+    });
+  }, [cartItems]);
 
   const handleQuantityChange = async (item: CartItem, nextQuantity: number) => {
     try {
@@ -111,6 +149,12 @@ export const CartPage = () => {
       setSavingId(item.product.id);
       const nextCart = await removeCartItem(item.product.id);
       setCart(nextCart);
+      // Remove from selection if still present
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.product.id);
+        return next;
+      });
     } catch (removeError) {
       setError(removeError instanceof Error ? removeError.message : 'Co loi xay ra');
     } finally {
@@ -118,13 +162,32 @@ export const CartPage = () => {
     }
   };
 
+  const handleCheckout = useCallback(async () => {
+    const selected = Array.from(selectedIds);
+    if (selected.length === 0) {
+      setError('Vui long chon it nhat 1 san pham de thanh toan');
+      return;
+    }
+
+    try {
+      setCheckingOut(true);
+      setError('');
+      await checkout(selected);
+      navigate('/orders', { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Co loi xay ra');
+    } finally {
+      setCheckingOut(false);
+    }
+  }, [navigate, selectedIds]);
+
   const summaryRows = useMemo(
     () => [
-      { label: 'Tạm tính', value: formatCurrency(subtotal) },
+      { label: 'Tạm tính', value: formatCurrency(selectedSubtotal) },
       { label: 'Phí vận chuyển', value: 'Miễn phí' },
       { label: 'Thuế GTGT', value: formatCurrency(vat) },
     ],
-    [subtotal, vat],
+    [selectedSubtotal, vat],
   );
 
   return (
@@ -165,95 +228,137 @@ export const CartPage = () => {
                 <p className="mt-2 text-slate-600">Đợi mình lấy dữ liệu từ backend...</p>
               </div>
             ) : cartItems.length > 0 ? (
-              cartItems.map((item, index) => {
-                const product = item.product;
-                const image = product.image ?? fallbackImage;
-                const lineTotal = item.lineTotal;
-
-                return (
-                  <article
-                    key={product.id}
-                    className="group flex flex-col gap-4 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:flex-row md:items-start md:gap-6 md:p-5"
-                    style={{ animationDelay: `${index * 120}ms` }}
+              <>
+                {/* Select all row */}
+                <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={toggleAll}
+                    className="flex h-5 w-5 items-center justify-center rounded border border-slate-400 bg-white transition-colors hover:border-amber-600"
                   >
-                    <div className="flex-shrink-0 self-start">
-                      <div className="h-28 w-28 overflow-hidden rounded-xl bg-slate-100 md:h-36 md:w-36">
-                        <img
-                          src={image}
-                          alt={product.name}
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      </div>
-                    </div>
+                    {allSelected ? (
+                      <span className="material-symbols-outlined text-[16px] text-amber-700">check</span>
+                    ) : someSelected ? (
+                      <span className="material-symbols-outlined text-[16px] text-amber-500">remove</span>
+                    ) : null}
+                  </button>
+                  <span className="text-sm font-semibold text-slate-700">
+                    Chọn tất cả ({cartItems.length} sản phẩm)
+                  </span>
+                </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="min-w-0">
-                        <h2 className="break-words font-['Noto_Serif'] text-lg font-medium leading-tight text-slate-950 md:text-xl">
-                          {product.name}
-                        </h2>
-                        <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          {product.brand ?? product.category ?? 'Nhạc cụ'}
-                        </p>
-                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                          {product.description ?? 'Sản phẩm được đồng bộ từ backend.'}
-                        </p>
+                {cartItems.map((item, index) => {
+                  const product = item.product;
+                  const image = product.image ?? fallbackImage;
+                  const lineTotal = item.lineTotal;
+                  const isSelected = selectedIds.has(product.id);
+
+                  return (
+                    <article
+                      key={product.id}
+                      className={`group flex flex-col gap-4 rounded-2xl border p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:flex-row md:items-start md:gap-6 md:p-5 ${
+                        isSelected
+                          ? 'border-amber-300 bg-amber-50/70'
+                          : 'border-white/70 bg-white/90'
+                      }`}
+                      style={{ animationDelay: `${index * 120}ms` }}
+                    >
+                      {/* Checkbox */}
+                      <div className="flex-shrink-0 pt-2 md:pt-0">
                         <button
                           type="button"
-                          onClick={() => handleRemove(item)}
-                          disabled={savingId === product.id}
-                          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => toggleItem(product.id)}
+                          className={`flex h-6 w-6 items-center justify-center rounded border-2 transition-colors ${
+                            isSelected
+                              ? 'border-amber-600 bg-amber-600'
+                              : 'border-slate-400 bg-white hover:border-amber-600'
+                          }`}
                         >
-                          <span className="material-symbols-outlined text-[18px]">close</span>
-                          Xóa
+                          {isSelected && (
+                            <span className="material-symbols-outlined text-[16px] text-white">check</span>
+                          )}
                         </button>
                       </div>
 
-                      <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-slate-500">Giá</span>
-                          <span className="whitespace-nowrap text-sm font-semibold text-slate-900 md:text-base">
-                            {formatCurrency(product.price)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-slate-500">Số lượng</span>
-                          <div className="flex items-center gap-4 rounded-full border border-slate-300 bg-white px-4 py-2">
-                            <button
-                              type="button"
-                              onClick={() => handleQuantityChange(item, item.quantity - 1)}
-                              disabled={savingId === product.id}
-                              className="text-slate-500 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`Giảm số lượng ${product.name}`}
-                            >
-                              <span className="material-symbols-outlined text-[18px]">remove</span>
-                            </button>
-                            <span className="w-7 text-center text-sm font-semibold text-slate-900">
-                              {item.quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                              disabled={savingId === product.id}
-                              className="text-slate-500 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`Tăng số lượng ${product.name}`}
-                            >
-                              <span className="material-symbols-outlined text-[18px]">add</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-slate-500">Tổng cộng</span>
-                          <span className="whitespace-nowrap font-['Noto_Serif'] text-lg font-medium text-amber-700 md:text-xl">
-                            {formatCurrency(lineTotal)}
-                          </span>
+                      <div className="flex-shrink-0 self-start">
+                        <div className="h-28 w-28 overflow-hidden rounded-xl bg-slate-100 md:h-36 md:w-36">
+                          <img
+                            src={image}
+                            alt={product.name}
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
                         </div>
                       </div>
-                    </div>
-                  </article>
-                );
-              })
+
+                      <div className="min-w-0 flex-1">
+                        <div className="min-w-0">
+                          <h2 className="break-words font-['Noto_Serif'] text-lg font-medium leading-tight text-slate-950 md:text-xl">
+                            {product.name}
+                          </h2>
+                          <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            {product.brand ?? product.category ?? 'Nhạc cụ'}
+                          </p>
+                          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                            {product.description ?? 'Sản phẩm được đồng bộ từ backend.'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => handleRemove(item)}
+                            disabled={savingId === product.id}
+                            className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">close</span>
+                            Xóa
+                          </button>
+                        </div>
+
+                        <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-slate-500">Giá</span>
+                            <span className="whitespace-nowrap text-sm font-semibold text-slate-900 md:text-base">
+                              {formatCurrency(product.price)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-slate-500">Số lượng</span>
+                            <div className="flex items-center gap-4 rounded-full border border-slate-300 bg-white px-4 py-2">
+                              <button
+                                type="button"
+                                onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                                disabled={savingId === product.id}
+                                className="text-slate-500 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={`Giảm số lượng ${product.name}`}
+                              >
+                                <span className="material-symbols-outlined text-[18px]">remove</span>
+                              </button>
+                              <span className="w-7 text-center text-sm font-semibold text-slate-900">
+                                {item.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                                disabled={savingId === product.id}
+                                className="text-slate-500 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={`Tăng số lượng ${product.name}`}
+                              >
+                                <span className="material-symbols-outlined text-[18px]">add</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-slate-500">Tổng cộng</span>
+                            <span className="whitespace-nowrap font-['Noto_Serif'] text-lg font-medium text-amber-700 md:text-xl">
+                              {formatCurrency(lineTotal)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-10 text-center shadow-sm">
                 <p className="text-lg font-semibold text-slate-900">Giỏ hàng đang trống</p>
@@ -291,7 +396,17 @@ export const CartPage = () => {
           <aside className="space-y-4 lg:col-span-4 lg:sticky lg:top-8">
             <div className="rounded-3xl border border-white/70 bg-slate-50/95 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur">
               <h2 className="font-['Noto_Serif'] text-3xl font-medium text-slate-950">Tổng đơn hàng</h2>
-              <p className="mt-2 text-sm text-slate-500">{itemCount} sản phẩm trong giỏ</p>
+              <p className="mt-2 text-sm text-slate-500">
+                {selectedCount > 0
+                  ? `${selectedCount} sản phẩm đã chọn`
+                  : `${cartItems.length} sản phẩm trong giỏ`}
+              </p>
+
+              {selectedCount === 0 && cartItems.length > 0 && (
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  Vui lòng chọn ít nhất 1 sản phẩm để thanh toán
+                </div>
+              )}
 
               <div className="mt-8 space-y-5 border-b border-slate-200 pb-8">
                 {summaryRows.map((row) => (
@@ -314,9 +429,15 @@ export const CartPage = () => {
 
               <button
                 type="button"
-                className="flex w-full items-center justify-center gap-3 rounded-full bg-slate-950 px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:bg-slate-800 active:scale-[0.99]"
+                onClick={handleCheckout}
+                disabled={checkingOut || selectedCount === 0}
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-slate-950 px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:bg-slate-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Thanh toán ngay
+                {checkingOut
+                  ? 'Đang xử lý...'
+                  : selectedCount > 0
+                    ? `Thanh toán (${selectedCount})`
+                    : 'Thanh toán ngay'}
                 <span className="material-symbols-outlined text-[18px]">lock</span>
               </button>
 
