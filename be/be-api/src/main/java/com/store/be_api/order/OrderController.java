@@ -31,7 +31,7 @@ public class OrderController {
         List<UUID> productIds = request.getProductIds().stream()
                 .map(UUID::fromString)
                 .toList();
-        OrderResponse order = orderService.checkout(authentication, productIds);
+        OrderResponse order = orderService.checkout(authentication, productIds, request.getCouponCode());
         return ResponseEntity.ok(order);
     }
 

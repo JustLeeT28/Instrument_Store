@@ -1,6 +1,6 @@
 package com.store.be_api.order.dto;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,5 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CheckoutRequest {
-    private List<String> productIds;
+    private java.util.List<String> productIds;
+
+    @JsonAlias({"voucherCode"})
+    private String couponCode;
 }

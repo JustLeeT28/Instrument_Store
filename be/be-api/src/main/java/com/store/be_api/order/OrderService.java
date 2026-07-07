@@ -1,8 +1,11 @@
 package com.store.be_api.order;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +23,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.store.be_api.cart.CartService;
 import com.store.be_api.cart.dto.CartItemResponse;
 import com.store.be_api.cart.dto.CartResponse;
+import com.store.be_api.coupon.Coupon;
+import com.store.be_api.coupon.CouponRepository;
 import com.store.be_api.order.dto.OrderItemResponse;
 import com.store.be_api.order.dto.OrderListResponse;
 import com.store.be_api.order.dto.OrderResponse;
@@ -39,12 +44,13 @@ public class OrderService {
     private final UserRepository userRepository;
     private final CartService cartService;
     private final ProductRepository productRepository;
+    private final CouponRepository couponRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
 
     @Transactional
-    public OrderResponse checkout(Authentication authentication, List<UUID> productIds) {
+    public OrderResponse checkout(Authentication authentication, List<UUID> productIds, String couponCode) {
         User user = getAuthenticatedUser(authentication);
         CartResponse cart = cartService.getCart(authentication);
 
@@ -80,7 +86,6 @@ public class OrderService {
                 .orderCode(orderCode)
                 .status("pending")
                 .paymentMethod("COD")
-                .discountAmount(BigDecimal.ZERO)
                 .shippingFee(BigDecimal.ZERO)
                 .build();
 
@@ -114,9 +119,19 @@ public class OrderService {
             orderItems.add(orderItem);
         }
 
+        Coupon coupon = resolveCoupon(couponCode, subtotal);
+        BigDecimal discountAmount = coupon != null ? calculateDiscountAmount(subtotal, coupon) : BigDecimal.ZERO;
+
+        if (coupon != null) {
+            coupon.setQuantity(coupon.getQuantity() - 1);
+            couponRepository.save(coupon);
+        }
+
+        order.setCouponId(coupon != null ? coupon.getId() : null);
+        order.setDiscountAmount(discountAmount);
         order.setItems(orderItems);
         order.setSubtotal(subtotal);
-        order.setTotal(subtotal.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+        order.setTotal(subtotal.add(order.getShippingFee()).subtract(discountAmount));
 
         orderRepository.save(order);
 
@@ -146,7 +161,8 @@ public class OrderService {
 
     public OrderResponse getOrderById(Authentication authentication, UUID orderId) {
         User user = getAuthenticatedUser(authentication);
-        Order order = orderRepository.findById(orderId)
+        UUID lookupOrderId = Objects.requireNonNull(orderId, "orderId");
+        Order order = orderRepository.findById(lookupOrderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
 
         if (!order.getUser().getId().equals(user.getId())) {
@@ -179,6 +195,7 @@ public class OrderService {
         return OrderResponse.builder()
                 .id(order.getId().toString())
                 .orderCode(order.getDisplayOrderCode())
+                .couponCode(resolveCouponCode(order.getCouponId()))
                 .status(order.getStatus())
                 .subtotal(order.getSubtotal().doubleValue())
                 .discountAmount(order.getDiscountAmount().doubleValue())
@@ -188,6 +205,71 @@ public class OrderService {
                 .createdAt(createdAt)
                 .items(itemResponses)
                 .build();
+    }
+
+    private Coupon resolveCoupon(String couponCode, BigDecimal subtotal) {
+        if (couponCode == null || couponCode.isBlank()) {
+            return null;
+        }
+
+        Coupon coupon = couponRepository.findByCodeIgnoreCase(couponCode.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher khong ton tai"));
+
+        if (coupon.getActive() == null || !coupon.getActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher da bi khoa");
+        }
+
+        if (coupon.getQuantity() == null || coupon.getQuantity() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher da het so luong");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        if (coupon.getStartDate() != null && now.isBefore(coupon.getStartDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher chua bat dau");
+        }
+        if (coupon.getEndDate() != null && now.isAfter(coupon.getEndDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voucher da het han");
+        }
+
+        if (coupon.getMinOrderValue() != null && subtotal.compareTo(coupon.getMinOrderValue()) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Don hang chua du dieu kien ap dung voucher");
+        }
+
+        return coupon;
+    }
+
+    private BigDecimal calculateDiscountAmount(BigDecimal subtotal, Coupon coupon) {
+        if (coupon == null || coupon.getDiscountValue() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discountAmount;
+        if ("percent".equalsIgnoreCase(coupon.getDiscountType())) {
+            discountAmount = subtotal
+                    .multiply(coupon.getDiscountValue())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            if (coupon.getMaxDiscountValue() != null && discountAmount.compareTo(coupon.getMaxDiscountValue()) > 0) {
+                discountAmount = coupon.getMaxDiscountValue();
+            }
+        } else {
+            discountAmount = coupon.getDiscountValue();
+        }
+
+        if (discountAmount.compareTo(subtotal) > 0) {
+            discountAmount = subtotal;
+        }
+
+        return discountAmount.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private String resolveCouponCode(UUID couponId) {
+        if (couponId == null) {
+            return null;
+        }
+
+        return couponRepository.findById(couponId)
+            .map(coupon -> coupon.getCode())
+                .orElse(null);
     }
 
     private User getAuthenticatedUser(Authentication authentication) {

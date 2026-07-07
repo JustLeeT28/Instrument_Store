@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class OrderResponse {
     private String id;
     private String orderCode;
+    private String couponCode;
     private String status;
     private double subtotal;
     private double discountAmount;
