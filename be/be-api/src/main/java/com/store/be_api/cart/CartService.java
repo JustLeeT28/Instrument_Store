@@ -109,6 +109,17 @@ public class CartService {
     }
 
     @Transactional
+    public void removeItems(Authentication authentication, List<UUID> productIds) {
+        User user = getAuthenticatedUser(authentication);
+        Cart cart = cartRepository.findByUser(user).orElse(null);
+        if (cart == null || productIds == null || productIds.isEmpty()) {
+            return;
+        }
+        cart.getItems().removeIf(item -> productIds.contains(item.getProduct().getId()));
+        cartRepository.save(cart);
+    }
+
+    @Transactional
     public void clearCart(Authentication authentication) {
         User user = getAuthenticatedUser(authentication);
         Cart cart = cartRepository.findByUser(user).orElse(null);
