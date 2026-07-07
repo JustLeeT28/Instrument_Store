@@ -32,6 +32,10 @@ export type OrderListResponse = {
   size: number;
 };
 
+export type CheckoutRequest = {
+  productIds: string[];
+};
+
 async function readErrorMessage(res: Response) {
   const text = await res.text();
   try {
@@ -68,6 +72,17 @@ export async function fetchOrders(page = 1, size = 10): Promise<OrderListRespons
 export async function fetchOrderById(orderId: string): Promise<Order> {
   const res = await fetch(`${API_BASE}/orders/${orderId}`, {
     headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
+export async function checkout(productIds: string[]): Promise<Order> {
+  const res = await fetch(`${API_BASE}/orders/checkout`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ productIds } as CheckoutRequest),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));
