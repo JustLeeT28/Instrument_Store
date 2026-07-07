@@ -254,6 +254,19 @@ export const OrderHistoryPage = () => {
                         </div>
                       </div>
 
+                      {(order.couponCode || order.discountAmount > 0) && (
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+                          {order.couponCode && (
+                            <p className="font-semibold">Voucher áp dụng: {order.couponCode}</p>
+                          )}
+                          {order.discountAmount > 0 && (
+                            <p className={order.couponCode ? 'mt-1' : 'font-semibold'}>
+                              Giảm giá: {formatCurrency(order.discountAmount)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Product Thumbnails */}
                       <div className="flex items-center gap-4 overflow-x-auto pb-2">
                         {order.items.slice(0, 4).map((item) => (

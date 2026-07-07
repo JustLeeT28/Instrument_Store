@@ -15,6 +15,7 @@ export type OrderItem = {
 export type Order = {
   id: string;
   orderCode: string;
+  couponCode?: string | null;
   status: OrderStatus;
   subtotal: number;
   discountAmount: number;
@@ -34,6 +35,7 @@ export type OrderListResponse = {
 
 export type CheckoutRequest = {
   productIds: string[];
+  couponCode?: string;
 };
 
 async function readErrorMessage(res: Response) {
@@ -78,11 +80,11 @@ export async function fetchOrderById(orderId: string): Promise<Order> {
   return res.json();
 }
 
-export async function checkout(productIds: string[]): Promise<Order> {
+export async function checkout(productIds: string[], couponCode?: string): Promise<Order> {
   const res = await fetch(`${API_BASE}/orders/checkout`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ productIds } as CheckoutRequest),
+    body: JSON.stringify({ productIds, couponCode } as CheckoutRequest),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));

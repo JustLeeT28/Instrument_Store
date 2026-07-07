@@ -24,6 +24,7 @@ export const CartPage = () => {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [checkingOut, setCheckingOut] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -172,14 +173,18 @@ export const CartPage = () => {
     try {
       setCheckingOut(true);
       setError('');
-      await checkout(selected);
+      await checkout(selected, couponCode.trim() || undefined);
       navigate('/orders', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Co loi xay ra');
     } finally {
       setCheckingOut(false);
     }
-  }, [navigate, selectedIds]);
+  }, [couponCode, navigate, selectedIds]);
+
+  const handleApplyCoupon = useCallback(() => {
+    setCouponCode((current) => current.trim().toUpperCase());
+  }, []);
 
   const summaryRows = useMemo(
     () => [
@@ -463,15 +468,23 @@ export const CartPage = () => {
                 <input
                   type="text"
                   placeholder="Nhập mã của bạn"
+                    value={couponCode}
+                    onChange={(event) => setCouponCode(event.target.value)}
                   className="min-w-0 flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                 />
                 <button
                   type="button"
+                    onClick={handleApplyCoupon}
                   className="rounded-full border border-slate-900 px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-slate-900 hover:text-white"
                 >
                   Áp dụng
                 </button>
               </div>
+                {couponCode.trim() && (
+                  <p className="mt-3 text-xs text-slate-500">
+                    Voucher <span className="font-semibold text-slate-900">{couponCode.trim().toUpperCase()}</span> sẽ được kiểm tra khi thanh toán.
+                  </p>
+                )}
             </div>
           </aside>
         </div>

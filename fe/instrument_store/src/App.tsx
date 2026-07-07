@@ -12,7 +12,7 @@ import {
   OrderHistoryPage,
 } from './pages';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminDashboard, ProductManagement, UserManagement } from './pages';
+import { AdminDashboard, ProductManagement, UserManagement, VoucherManagement } from './pages';
 import './App.css';
 
 function AppContent() {
@@ -43,7 +43,7 @@ function AppContent() {
             <Route index element={<div>Thong ke doanh thu (chua trien khai)</div>} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="users" element={<UserManagement />} />
-            <Route path="vouchers" element={<div>Quan ly voucher (chua trien khai)</div>} />
+            <Route path="vouchers" element={<VoucherManagement />} />
           </Route>
 
           <Route path="/login" element={<LoginPage />} />
