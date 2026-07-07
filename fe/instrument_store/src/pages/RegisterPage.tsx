@@ -11,10 +11,30 @@ export const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!value) {
+      setEmailError('Email không được để trống');
+      return false;
+    }
+    if (!emailRegex.test(value)) {
+      setEmailError('Email không đúng định dạng');
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+
+    if (!validateEmail(email)) {
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
       return;
@@ -67,9 +87,13 @@ export const RegisterPage = () => {
                   className="mt-3 w-full border-0 border-b-2 border-slate-200 bg-transparent px-1 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-600 focus:ring-0"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError(null);
+                  }}
                   placeholder="name@example.com"
                 />
+                {emailError && <p className="mt-1 text-sm text-red-600">{emailError}</p>}
               </div>
 
               <div>
