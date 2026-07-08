@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.store.be_api.order.Order;
 import com.store.be_api.order.OrderItem;
 import com.store.be_api.order.OrderRepository;
+import com.store.be_api.order.OrderStatus;
 import com.store.be_api.revenue.dto.RevenueStatsResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -148,8 +149,8 @@ public class RevenueService {
                 .toList();
     }
 
-    private boolean isCancelled(String status) {
-        return status != null && CANCELLED_STATUS.equals(status.toLowerCase(Locale.ROOT));
+    private boolean isCancelled(OrderStatus status) {
+        return status != null && CANCELLED_STATUS.equals(status.getValue().toLowerCase(Locale.ROOT));
     }
 
     private BigDecimal valueOrZero(BigDecimal value) {
