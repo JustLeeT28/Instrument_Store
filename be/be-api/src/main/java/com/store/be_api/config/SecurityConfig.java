@@ -28,10 +28,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll()
+                .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll() // all
                 .requestMatchers("/admin/revenue", "/admin/revenue/**").hasRole("ADMIN")
                 .requestMatchers("/users/admin", "/users/admin/**").hasRole("ADMIN")
-                .requestMatchers("/coupons/admin", "/coupons/admin/**").hasRole("ADMIN")
+                .requestMatchers("/coupons/admin", "/coupons/admin/**").hasRole("ADMIN") // admin
                 .requestMatchers("/brands/admin", "/brands/admin/**").hasRole("ADMIN")
                 .requestMatchers("/categories/admin", "/categories/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/products").hasRole("ADMIN")
@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/orders/admin", "/orders/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**", "/api/products", "/api/products/**", "/products", "/products/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().authenticated() // đăng nhập
                 )
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

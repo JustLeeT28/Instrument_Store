@@ -2,37 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchCurrentUser, isAuthenticated, logout, updateCurrentUser, type CurrentUser } from '../services/auth';
 
-type OrderItem = {
-  id: string;
-  name: string;
-  date: string;
-  price: string;
-  status: string;
-  statusClass: string;
-  image: string;
-};
-
-const recentOrders: OrderItem[] = [
-  {
-    id: '#LC-99201',
-    name: 'Acoustic Custom Series X1',
-    date: '12/05/2024',
-    price: '45.000.000₫',
-    status: 'Đã giao hàng',
-    statusClass: 'bg-green-50 text-green-700',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJvo2sGuScIqZKAzB-vqlxFtKPnj4og30xo3oSb9mj3lKXrvCLB96zyMfh84CVYyMLcCurVYnwS9dukq2Ox40vMEPcRTPG-EaV29raYjNb2hFzF86aMxaF3QWjV4NvFQPjJxTzwq2fzR6fyNSMTBmsym44OHWBRl6M0YPk3pRPLjyjBBnWUYVuMW10muW3tscy7oConX1LiQIRZfN7LnksJseE0jT_0tsaU-CxdBZTGVfCI_2NSGcp_4TUC3F5mAo03cJXHTCOc4pe',
-  },
-  {
-    id: '#LC-98150',
-    name: 'Bộ bảo dưỡng Piano cao cấp',
-    date: '02/04/2024',
-    price: '2.500.000₫',
-    status: 'Đang vận chuyển',
-    statusClass: 'bg-amber-50 text-amber-700',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDi0IMQVTU4-_3MgEwa7W9dUOi0sJLwMa3G9pGFDypxwkIU0jwgmS5h9cJU_kNxj6OksW_9xqWAH5XWk6HNIyV9F1KJHNpq4desG1HzprVm_408EumxZxqEzF3AaK6U-1FZ9L9QgYP7C0P9LioT-Rp6WbQIRwJpHjYjmtLyE8vmMt-yVvLrAi-MIKhToz6ZZ2xNT51-x4ORETaMd1EwP2E0jErkMLDD3afu_3DiZX3fiV2abYoyULO6IEGxEomHxnCcXcGls4pvM8qQ',
-  },
-];
-
 const ROLE_LABELS: Record<CurrentUser['role'], string> = {
   CUSTOMER: 'Khách hàng',
   STUDENT: 'Học viên',
@@ -287,7 +256,7 @@ export const ProfilePage = () => {
                 <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-600">Hồ sơ</p>
                 <h3 className="mt-3 text-3xl font-semibold text-slate-900">Thông tin hồ sơ</h3>
                 <p className="mt-2 text-sm text-slate-500">
-                  Dữ liệu này được lấy trực tiếp từ bảng `users` trong database.
+                  
                 </p>
               </div>
               <div className="flex flex-col items-start gap-3 sm:items-end">
@@ -354,48 +323,6 @@ export const ProfilePage = () => {
             )}
 
             {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
-          </section>
-
-          <section
-            id="recent-orders"
-            className="rounded-3xl border border-white/80 bg-white/90 p-6 shadow-xl backdrop-blur sm:p-8"
-          >
-            <div className="mb-8 flex flex-col gap-3 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-3xl font-semibold text-slate-900">Đơn hàng gần đây</h3>
-              <Link className="text-sm font-semibold text-amber-600 underline-offset-4 hover:text-amber-700 hover:underline" to="/orders">
-                Xem tất cả
-              </Link>
-            </div>
-
-            <div className="space-y-4">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-200 shadow">
-                      <img className="h-full w-full object-cover" src={order.image} alt={order.name} />
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold text-slate-900">{order.name}</p>
-                      <p className="text-sm text-slate-500">
-                        Mã đơn: <span className="font-medium text-amber-600">{order.id}</span>
-                      </p>
-                      <p className="mt-1 text-sm text-slate-500">Ngày đặt: {order.date}</p>
-                    </div>
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <p className="mb-2 text-lg font-bold text-amber-600">{order.price}</p>
-                    <span
-                      className={`inline-flex rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${order.statusClass}`}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </section>
         </div>
       </div>
