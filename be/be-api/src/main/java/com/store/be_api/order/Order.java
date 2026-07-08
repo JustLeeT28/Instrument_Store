@@ -42,7 +42,7 @@ public class Order {
 
     @Column(nullable = false)
     @Builder.Default
-    private String status = "pending";
+    private OrderStatus status = OrderStatus.PREPARING;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
