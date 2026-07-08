@@ -16,4 +16,7 @@ public class CheckoutRequest {
 
     @JsonAlias({"voucherCode"})
     private String couponCode;
+
+    @JsonAlias({"paymentType"})
+    private String paymentMethod;
 }

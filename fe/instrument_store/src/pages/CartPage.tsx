@@ -173,8 +173,11 @@ export const CartPage = () => {
     try {
       setCheckingOut(true);
       setError('');
-      await checkout(selected, couponCode.trim() || undefined);
-      navigate('/orders', { replace: true });
+      const result = await checkout(selected, couponCode.trim() || undefined);
+      if (!result.checkoutUrl) {
+        throw new Error('PayOS khong tra ve duong dan thanh toan');
+      }
+      window.location.assign(result.checkoutUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Co loi xay ra');
     } finally {

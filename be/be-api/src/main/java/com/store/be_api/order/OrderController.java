@@ -19,8 +19,10 @@ import com.store.be_api.order.dto.AdminOrderListResponse;
 import com.store.be_api.order.dto.AdminOrderResponse;
 import com.store.be_api.order.dto.AdminUpdateOrderStatusRequest;
 import com.store.be_api.order.dto.CheckoutRequest;
+import com.store.be_api.order.dto.CheckoutResponse;
 import com.store.be_api.order.dto.OrderListResponse;
 import com.store.be_api.order.dto.OrderResponse;
+import com.store.be_api.payment.PayOSCheckoutService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,14 +32,15 @@ import lombok.RequiredArgsConstructor;
 public class OrderController {
 
     private final OrderService orderService;
+    private final PayOSCheckoutService payOSCheckoutService;
 
     @PostMapping("/checkout")
-    public ResponseEntity<OrderResponse> checkout(Authentication authentication, @RequestBody CheckoutRequest request) {
+    public ResponseEntity<CheckoutResponse> checkout(Authentication authentication, @RequestBody CheckoutRequest request) {
         List<UUID> productIds = request.getProductIds().stream()
                 .map(UUID::fromString)
                 .toList();
-        OrderResponse order = orderService.checkout(authentication, productIds, request.getCouponCode());
-        return ResponseEntity.ok(order);
+        CheckoutResponse checkout = payOSCheckoutService.createCheckout(authentication, productIds, request.getCouponCode());
+        return ResponseEntity.ok(checkout);
     }
 
     @GetMapping

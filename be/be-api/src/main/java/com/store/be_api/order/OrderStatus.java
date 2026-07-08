@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum OrderStatus {
+    PENDING_PAYMENT("pending_payment", "Chờ thanh toán"),
     PREPARING("preparing", "Chuẩn bị hàng"),
     SHIPPING("shipping", "Đang vận chuyển"),
     DELIVERED("delivered", "Đã giao hàng"),
@@ -33,7 +34,8 @@ public enum OrderStatus {
         }
 
         return switch (value.trim().toLowerCase()) {
-            case "preparing", "pending", "confirmed" -> PREPARING;
+            case "pending", "pending_payment", "pending-payment", "waiting_payment", "waiting-payment" -> PENDING_PAYMENT;
+            case "preparing", "confirmed" -> PREPARING;
             case "shipping" -> SHIPPING;
             case "delivered" -> DELIVERED;
             case "cancelled", "canceled" -> CANCELLED;

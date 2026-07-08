@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchOrders, type Order, type OrderStatus } from '../services/orders';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { confirmPayosPayment, fetchOrders, type Order, type OrderStatus } from '../services/orders';
 import { isAuthenticated } from '../services/auth';
 
 const formatCurrency = (value: number) =>
@@ -60,6 +60,7 @@ const fallbackImage =
   );
 
 export const OrderHistoryPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,6 +69,13 @@ export const OrderHistoryPage = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const payosOrderCode = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const payment = params.get('payment');
+    const code = params.get('orderCode');
+    return payment === 'success' && code ? code : null;
+  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -81,6 +89,9 @@ export const OrderHistoryPage = () => {
       try {
         setError('');
         setLoading(true);
+        if (payosOrderCode) {
+          await confirmPayosPayment(payosOrderCode);
+        }
         const data = await fetchOrders(1, 10);
         if (!mounted) return;
         setOrders(data.orders);
@@ -96,7 +107,7 @@ export const OrderHistoryPage = () => {
 
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [payosOrderCode]);
 
   const handleLoadMore = async () => {
     try {
@@ -119,6 +130,33 @@ export const OrderHistoryPage = () => {
     : orders.filter((o) => o.status === activeTab);
 
   const displayedCount = filteredOrders.length;
+  const paymentNotice = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const payment = params.get('payment');
+    const orderCode = params.get('orderCode');
+
+    if (payment === 'success') {
+      return {
+        tone: 'success' as const,
+        title: 'Thanh toán thành công',
+        message: orderCode
+          ? `Đơn hàng ${orderCode} đang được xác nhận.`
+          : 'Đơn hàng của bạn đang được xác nhận.',
+      };
+    }
+
+    if (payment === 'cancelled') {
+      return {
+        tone: 'info' as const,
+        title: 'Đã quay lại từ PayOS',
+        message: orderCode
+          ? `Thanh toán cho đơn hàng ${orderCode} chưa hoàn tất.`
+          : 'Thanh toán chưa hoàn tất.',
+      };
+    }
+
+    return null;
+  }, [location.search]);
 
   if (!isAuthenticated()) {
     return (
@@ -169,6 +207,19 @@ export const OrderHistoryPage = () => {
             Xem lại các đơn hàng nhạc cụ và phụ kiện cao cấp bạn đã sở hữu.
           </p>
         </div>
+
+        {paymentNotice && (
+          <div
+            className={`mb-8 rounded-2xl border px-4 py-3 text-sm ${
+              paymentNotice.tone === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border-sky-200 bg-sky-50 text-sky-800'
+            }`}
+          >
+            <p className="font-semibold">{paymentNotice.title}</p>
+            <p className="mt-1">{paymentNotice.message}</p>
+          </div>
+        )}
 
         {/* Quick Stats */}
         <div className="mb-8 flex gap-6 bg-white/90 border border-white/70 rounded-xl p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur w-fit">

@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,9 +30,11 @@ import com.store.be_api.coupon.CouponRepository;
 import com.store.be_api.order.dto.AdminOrderListResponse;
 import com.store.be_api.order.dto.AdminOrderResponse;
 import com.store.be_api.order.dto.AdminUpdateOrderStatusRequest;
+import com.store.be_api.order.dto.CheckoutResponse;
 import com.store.be_api.order.dto.OrderItemResponse;
 import com.store.be_api.order.dto.OrderListResponse;
 import com.store.be_api.order.dto.OrderResponse;
+import com.store.be_api.payment.PayOSService;
 import com.store.be_api.product.Product;
 import com.store.be_api.product.ProductImage;
 import com.store.be_api.product.ProductRepository;
@@ -50,12 +53,13 @@ public class OrderService {
     private final CartService cartService;
     private final ProductRepository productRepository;
     private final CouponRepository couponRepository;
+    private final PayOSService payOSService;
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
 
     @Transactional
-    public OrderResponse checkout(Authentication authentication, List<UUID> productIds, String couponCode) {
+    public CheckoutResponse checkout(Authentication authentication, List<UUID> productIds, String couponCode, String paymentMethod) {
         User user = getAuthenticatedUser(authentication);
         CartResponse cart = cartService.getCart(authentication);
 
@@ -85,12 +89,15 @@ public class OrderService {
         UUID orderId = UUID.randomUUID();
         String orderCode = "ORD-" + orderId.toString().replaceAll("-", "").toUpperCase().substring(0, 8);
 
+        boolean usePayOS = paymentMethod == null || paymentMethod.isBlank() || "PAYOS".equalsIgnoreCase(paymentMethod.trim());
+        String normalizedPaymentMethod = usePayOS ? "PAYOS" : paymentMethod.trim().toUpperCase();
+
         Order order = Order.builder()
                 .id(orderId)
                 .user(user)
                 .orderCode(orderCode)
-            .status(OrderStatus.PREPARING)
-                .paymentMethod("COD")
+                .status(usePayOS ? OrderStatus.PENDING_PAYMENT : OrderStatus.PREPARING)
+                .paymentMethod(normalizedPaymentMethod)
                 .shippingFee(BigDecimal.ZERO)
                 .build();
 
@@ -138,12 +145,31 @@ public class OrderService {
         order.setSubtotal(subtotal);
         order.setTotal(subtotal.add(order.getShippingFee()).subtract(discountAmount));
 
+        String checkoutUrl = null;
+        if (usePayOS) {
+            long payosOrderCode = generatePayOSOrderCode(orderId);
+            order.setPayosOrderCode(payosOrderCode);
+            PayOSService.PaymentLinkResult paymentLink = payOSService.createPaymentLink(order, user, orderItems);
+            checkoutUrl = paymentLink.checkoutUrl();
+            order.setPayosOrderCode(paymentLink.payosOrderCode());
+        }
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        if (order.getCreatedAt() == null) {
+            order.setCreatedAt(now);
+        }
+        order.setUpdatedAt(now);
+
         orderRepository.save(order);
 
         // Remove only checked-out items from cart
         cartService.removeItems(authentication, productIds);
 
-        return toResponse(order);
+        return CheckoutResponse.builder()
+                .order(toResponse(order))
+                .checkoutUrl(checkoutUrl)
+                .payosOrderCode(order.getPayosOrderCode())
+                .build();
     }
 
     public OrderListResponse getOrders(Authentication authentication, int page, int size) {
@@ -346,6 +372,12 @@ public class OrderService {
         return couponRepository.findById(couponId)
             .map(coupon -> coupon.getCode())
                 .orElse(null);
+    }
+
+    private long generatePayOSOrderCode(UUID orderId) {
+        long combined = orderId.getMostSignificantBits() ^ orderId.getLeastSignificantBits();
+        long normalized = Long.remainderUnsigned(combined, 9_000_000_000L);
+        return 1_000_000_000L + normalized;
     }
 
     private User getAuthenticatedUser(Authentication authentication) {

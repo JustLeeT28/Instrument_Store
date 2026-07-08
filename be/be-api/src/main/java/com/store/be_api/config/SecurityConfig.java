@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll() // all
+                .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll()
+                .requestMatchers("/payments/payos/**").permitAll()
                 .requestMatchers("/admin/revenue", "/admin/revenue/**").hasRole("ADMIN")
                 .requestMatchers("/users/admin", "/users/admin/**").hasRole("ADMIN")
                 .requestMatchers("/coupons/admin", "/coupons/admin/**").hasRole("ADMIN") // admin

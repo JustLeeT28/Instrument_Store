@@ -36,6 +36,12 @@ export type OrderListResponse = {
 export type CheckoutRequest = {
   productIds: string[];
   couponCode?: string;
+  paymentMethod?: string;
+};
+
+export type CheckoutResponse = {
+  checkoutUrl?: string | null;
+  payosOrderCode?: number | null;
 };
 
 async function readErrorMessage(res: Response) {
@@ -80,11 +86,21 @@ export async function fetchOrderById(orderId: string): Promise<Order> {
   return res.json();
 }
 
-export async function checkout(productIds: string[], couponCode?: string): Promise<Order> {
+export async function checkout(productIds: string[], couponCode?: string): Promise<CheckoutResponse> {
   const res = await fetch(`${API_BASE}/orders/checkout`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ productIds, couponCode } as CheckoutRequest),
+    body: JSON.stringify({ productIds, couponCode, paymentMethod: 'PAYOS' } satisfies CheckoutRequest),
+  });
+
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
+export async function confirmPayosPayment(payosOrderCode: string): Promise<{ success: boolean; orderId: string }> {
+  const res = await fetch(`${API_BASE}/payments/payos/confirm/${encodeURIComponent(payosOrderCode)}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));

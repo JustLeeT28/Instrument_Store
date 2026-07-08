@@ -57,8 +57,8 @@ export function OrderManagement() {
     fetchAdminOrders(1, 50)
       .then((data) => {
         if (!mounted) return;
-        setOrders(data.orders);
-        setDraftStatuses(Object.fromEntries(data.orders.map((order) => [order.id, order.status])));
+      setOrders(data.orders);
+      setDraftStatuses(Object.fromEntries(data.orders.map((order) => [order.id, order.status])));
         setError(null);
       })
       .catch((err) => {
@@ -77,10 +77,10 @@ export function OrderManagement() {
   const stats = useMemo(() => {
     return orders.reduce(
       (result, order) => {
-        result.total += 1;
-        result[order.status] += 1;
-        return result;
-      },
+      result.total += 1;
+      result[order.status] += 1;
+      return result;
+    },
       { total: 0, preparing: 0, shipping: 0, delivered: 0, cancelled: 0 }
     );
   }, [orders]);
