@@ -5,6 +5,7 @@ import { isAuthenticated } from '../services/auth';
 import { addFavorite, fetchFavoriteStatus, removeFavorite } from '../services/favorites';
 import { addCartItem } from '../services/cart';
 import { createReview } from '../services/reviews';
+import { CartNotification } from '../components/CartNotification';
 import type { Review, CreateReviewPayload } from '../services/reviews';
 
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/600x800?text=No+Image';
@@ -20,6 +21,7 @@ export const ProductDetailPage = () => {
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
+  const [showCartNotification, setShowCartNotification] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewTitle, setReviewTitle] = useState('');
@@ -96,8 +98,10 @@ export const ProductDetailPage = () => {
        setCartMessage(null);
        await addCartItem(product.id, 1);
        setCartMessage('Đã thêm vào giỏ hàng');
+       setShowCartNotification(true);
      } catch (err) {
        setCartMessage(err instanceof Error ? err.message : 'Không thêm được vào giỏ hàng');
+       setShowCartNotification(true);
      } finally {
        setCartLoading(false);
      }
@@ -250,7 +254,11 @@ export const ProductDetailPage = () => {
                   </span>
                 </button>
               </div>
-              {cartMessage && <p className="text-center text-xs text-slate-600">{cartMessage}</p>}
+              <CartNotification
+                message={cartMessage ?? ''}
+                visible={showCartNotification}
+                onClose={() => setShowCartNotification(false)}
+              />
               {favoriteError && <p className="text-center text-xs text-red-600">{favoriteError}</p>}
               <p className="text-center text-xs text-slate-600 flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-sm">local_shipping</span> Miễn phí Vận chuyển Toàn cầu & Bảo hiểm
