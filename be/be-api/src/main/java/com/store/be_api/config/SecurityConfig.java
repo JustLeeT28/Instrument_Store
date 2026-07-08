@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/cart", "/cart/**", "/error").permitAll()
+                .requestMatchers("/admin/revenue", "/admin/revenue/**").hasRole("ADMIN")
                 .requestMatchers("/users/admin", "/users/admin/**").hasRole("ADMIN")
                 .requestMatchers("/coupons/admin", "/coupons/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/products").hasRole("ADMIN")

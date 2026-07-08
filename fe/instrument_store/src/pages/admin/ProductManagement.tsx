@@ -113,7 +113,7 @@ export function ProductManagement() {
       })
       .catch(err => {
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Khong the tai danh sach san pham');
+        setError(err instanceof Error ? err.message : 'Không thể tải danh sách sản phẩm');
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -188,7 +188,7 @@ export function ProductManagement() {
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset) {
-      throw new Error('Thieu cau hinh Cloudinary trong file .env');
+      throw new Error('Thiếu cấu hình Cloudinary trong file .env');
     }
 
     const formData = new FormData();
@@ -203,7 +203,7 @@ export function ProductManagement() {
 
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(errorText || 'Upload anh len Cloudinary that bai');
+      throw new Error(errorText || 'Upload ảnh lên Cloudinary thất bại');
     }
 
     const data = await res.json();
@@ -235,7 +235,7 @@ export function ProductManagement() {
         };
       });
     } catch (err) {
-      setUploadImageError(err instanceof Error ? err.message : 'Upload anh that bai');
+      setUploadImageError(err instanceof Error ? err.message : 'Upload ảnh thất bại');
     } finally {
       setIsUploadingImage(false);
       event.target.value = '';
@@ -318,7 +318,7 @@ export function ProductManagement() {
       });
       setEditingProduct(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Khong the luu san pham');
+      setError(err instanceof Error ? err.message : 'Không thể lưu sản phẩm');
     } finally {
       setIsSaving(false);
     }
@@ -351,8 +351,8 @@ export function ProductManagement() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-amber-700">Admin</p>
-          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quan ly san pham</h2>
-          <p className="mt-2 text-sm text-slate-500">Theo doi ton kho, gia ban va cap nhat noi dung san pham.</p>
+          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quản lý sản phẩm</h2>
+          <p className="mt-2 text-sm text-slate-500">Theo dõi tồn kho, giá bán và cập nhật nội dung sản phẩm.</p>
         </div>
         <button
           onClick={handleAddNew}
@@ -364,11 +364,11 @@ export function ProductManagement() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <StatBox label="Tong san pham" value={stats.total.toLocaleString('vi-VN')} />
-        <StatBox label="Ton kho" value={stats.inventory.toLocaleString('vi-VN')} />
-        <StatBox label="Gia tri kho" value={formatCurrency(stats.value)} />
-        <StatBox label="Sap het" value={stats.lowStock.toLocaleString('vi-VN')} tone="amber" />
-        <StatBox label="Het hang" value={stats.outOfStock.toLocaleString('vi-VN')} tone="red" />
+        <StatBox label="Tổng sản phẩm" value={stats.total.toLocaleString('vi-VN')} />
+        <StatBox label="Tồn kho" value={stats.inventory.toLocaleString('vi-VN')} />
+        <StatBox label="Giá trị kho" value={formatCurrency(stats.value)} />
+        <StatBox label="Sắp hết" value={stats.lowStock.toLocaleString('vi-VN')} tone="amber" />
+        <StatBox label="Hết hàng" value={stats.outOfStock.toLocaleString('vi-VN')} tone="red" />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -378,7 +378,7 @@ export function ProductManagement() {
             <input
               value={query}
               onChange={event => setQuery(event.target.value)}
-              placeholder="Tim theo ten, slug, thuong hieu hoac danh muc"
+              placeholder="Tìm theo tên, slug, thương hiệu hoặc danh mục"
               className="w-full rounded-md border border-slate-200 py-3 pl-10 pr-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
             />
           </div>
@@ -387,10 +387,10 @@ export function ProductManagement() {
             onChange={event => setStockFilter(event.target.value as typeof stockFilter)}
             className="rounded-md border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
           >
-            <option value="ALL">Tat ca ton kho</option>
-            <option value="IN_STOCK">Con hang</option>
-            <option value="LOW_STOCK">Sap het hang</option>
-            <option value="OUT_OF_STOCK">Het hang</option>
+            <option value="ALL">Tất cả tồn kho</option>
+            <option value="IN_STOCK">Còn hàng</option>
+            <option value="LOW_STOCK">Sắp hết hàng</option>
+            <option value="OUT_OF_STOCK">Hết hàng</option>
           </select>
         </div>
 
@@ -406,24 +406,24 @@ export function ProductManagement() {
           <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-widest text-slate-500">
               <tr>
-                <th className="px-5 py-4 font-bold">San pham</th>
-                <th className="px-5 py-4 font-bold">Phan loai</th>
-                <th className="px-5 py-4 font-bold">Gia ban</th>
-                <th className="px-5 py-4 font-bold">Ton kho</th>
-                <th className="px-5 py-4 font-bold">Danh gia</th>
-                <th className="px-5 py-4 text-right font-bold">Thao tac</th>
+                <th className="px-5 py-4 font-bold">Sản phẩm</th>
+                <th className="px-5 py-4 font-bold">Phân loại</th>
+                <th className="px-5 py-4 font-bold">Giá bán</th>
+                <th className="px-5 py-4 font-bold">Tồn kho</th>
+                <th className="px-5 py-4 font-bold">Đánh giá</th>
+                <th className="px-5 py-4 text-right font-bold">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">Dang tai danh sach san pham...</td>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">Đang tải danh sách sản phẩm...</td>
                 </tr>
               )}
 
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">Khong co san pham phu hop.</td>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">Không có sản phẩm phù hợp.</td>
                 </tr>
               )}
 
@@ -447,14 +447,14 @@ export function ProductManagement() {
                         />
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-slate-950">{product.name}</p>
-                          <p className="truncate text-xs text-slate-500">{product.slug || 'Chua co slug'}</p>
-                          <p className="mt-1 line-clamp-1 text-xs text-slate-400">{product.description || 'Chua co mo ta'}</p>
+                          <p className="truncate text-xs text-slate-500">{product.slug || 'Chưa có slug'}</p>
+                          <p className="mt-1 line-clamp-1 text-xs text-slate-400">{product.description || 'Chưa có mô tả'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-4 text-slate-600">
-                      <p className="font-medium text-slate-800">{product.brand || 'Chua co hang'}</p>
-                      <p className="text-xs text-slate-400">{product.category || 'Chua co danh muc'}</p>
+                      <p className="font-medium text-slate-800">{product.brand || 'Chưa có hãng'}</p>
+                      <p className="text-xs text-slate-400">{product.category || 'Chưa có danh mục'}</p>
                     </td>
                     <td className="px-5 py-4 font-semibold text-slate-950">{formatCurrency(product.price)}</td>
                     <td className="px-5 py-4">
@@ -476,7 +476,7 @@ export function ProductManagement() {
                         className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
                       >
                         <span className="material-symbols-outlined text-[18px]">edit</span>
-                        Sua
+                        Sửa
                       </button>
                     </td>
                   </tr>
@@ -493,10 +493,10 @@ export function ProductManagement() {
             <div className="flex items-center justify-between border-b border-slate-100 p-6 md:p-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-amber-700">
-                  {editingProduct.isNew ? 'Them san pham' : 'Cap nhat san pham'}
+                  {editingProduct.isNew ? 'Thêm sản phẩm' : 'Cập nhật sản phẩm'}
                 </p>
                 <h3 className="mt-1 text-2xl font-bold text-slate-950">
-                  {editingProduct.isNew ? 'San pham moi' : editingProduct.name}
+                  {editingProduct.isNew ? 'Sản phẩm mới' : editingProduct.name}
                 </h3>
                 {!editingProduct.isNew && (
                   <p className="mt-1 font-mono text-xs uppercase tracking-wider text-slate-400">ID: {editingProduct.id}</p>
@@ -510,7 +510,7 @@ export function ProductManagement() {
             <div className="space-y-8 p-6 md:p-8">
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="space-y-5">
-                  <FieldLabel label="Ten nhac cu">
+                  <FieldLabel label="Tên nhạc cụ">
                     <input
                       type="text"
                       className="field-input"
@@ -518,7 +518,7 @@ export function ProductManagement() {
                       onChange={event => setEditingProduct({ ...editingProduct, name: event.target.value })}
                     />
                   </FieldLabel>
-                  <FieldLabel label="Slug duong dan">
+                  <FieldLabel label="Slug đường dẫn">
                     <input
                       type="text"
                       className="field-input font-mono text-sm"
@@ -527,7 +527,7 @@ export function ProductManagement() {
                     />
                   </FieldLabel>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <FieldLabel label="Gia niem yet">
+                    <FieldLabel label="Giá niêm yết">
                       <input
                         type="number"
                         className="field-input font-bold"
@@ -535,7 +535,7 @@ export function ProductManagement() {
                         onChange={event => setEditingProduct({ ...editingProduct, price: Number(event.target.value) })}
                       />
                     </FieldLabel>
-                    <FieldLabel label="Ton kho">
+                    <FieldLabel label="Tồn kho">
                       <input
                         type="number"
                         className="field-input"
@@ -546,7 +546,7 @@ export function ProductManagement() {
                   </div>
                 </div>
 
-                <FieldLabel label="Mo ta san pham">
+                <FieldLabel label="Mô tả sản phẩm">
                   <textarea
                     rows={10}
                     className="field-input min-h-[238px] resize-none leading-relaxed"
@@ -557,34 +557,34 @@ export function ProductManagement() {
               </div>
 
               <div className="border-t border-slate-100 pt-8">
-                <SectionTitle title="Thu vien hinh anh" />
+                <SectionTitle title="Thư viện hình ảnh" />
                 <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_auto]">
                   <input
                     type="text"
-                    placeholder="Dan link hinh anh moi tai day"
+                    placeholder="Dán link hình ảnh mới tại đây"
                     className="field-input"
                     value={newImgLink}
                     onChange={event => setNewImgLink(event.target.value)}
                   />
                   <button onClick={handleAddImage} className="rounded-md bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-amber-600">
-                    Them anh
+                    Thêm ảnh
                   </button>
                 </div>
 
                 <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <label className="inline-flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
                     <span className="material-symbols-outlined text-base">cloud_upload</span>
-                    <span>{isUploadingImage ? 'Dang upload...' : 'Tai anh tu may tinh'}</span>
+                    <span>{isUploadingImage ? 'Đang upload...' : 'Tải ảnh từ máy tính'}</span>
                     <input type="file" accept="image/*" multiple onChange={handleImageFilesSelected} className="hidden" />
                   </label>
-                  <p className="text-xs text-slate-500">Anh se upload len Cloudinary roi luu URL vao san pham.</p>
+                  <p className="text-xs text-slate-500">Ảnh sẽ upload lên Cloudinary rồi lưu URL vào sản phẩm.</p>
                 </div>
                 {uploadImageError && <p className="mb-4 text-sm text-red-600">{uploadImageError}</p>}
 
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {editingProduct.images.length === 0 && (
                     <div className="col-span-full rounded-lg border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-                      Chua co hinh anh nao.
+                      Chưa có hình ảnh nào.
                     </div>
                   )}
                   {editingProduct.images.map((image, index) => (
@@ -598,7 +598,7 @@ export function ProductManagement() {
                             image.isPrimary ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-amber-100'
                           }`}
                         >
-                          {image.isPrimary ? 'Anh chinh' : 'Dat chinh'}
+                          {image.isPrimary ? 'Ảnh chính' : 'Đặt chính'}
                         </button>
                         <button onClick={() => removeImage(index)} className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-500 hover:text-white">
                           <span className="material-symbols-outlined text-sm">delete</span>
@@ -611,10 +611,10 @@ export function ProductManagement() {
 
               <div className="border-t border-slate-100 pt-8">
                 <div className="mb-5 flex items-center justify-between gap-3">
-                  <SectionTitle title="Thong so ky thuat" />
+                  <SectionTitle title="Thông số kỹ thuật" />
                   <button onClick={addSpec} className="inline-flex items-center gap-2 rounded-md bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100">
                     <span className="material-symbols-outlined text-sm">add_circle</span>
-                    Them thong so
+                    Thêm thông số
                   </button>
                 </div>
 
@@ -622,15 +622,15 @@ export function ProductManagement() {
                   <table className="w-full text-left text-sm">
                     <thead className="bg-slate-50 text-xs uppercase tracking-widest text-slate-500">
                       <tr>
-                        <th className="px-5 py-4 font-bold">Ten thong so</th>
-                        <th className="px-5 py-4 font-bold">Gia tri</th>
-                        <th className="w-40 px-5 py-4 text-center font-bold">Thao tac</th>
+                        <th className="px-5 py-4 font-bold">Tên thông số</th>
+                        <th className="px-5 py-4 font-bold">Giá trị</th>
+                        <th className="w-40 px-5 py-4 text-center font-bold">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {editingProduct.specs.length === 0 && (
                         <tr>
-                          <td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-500">Chua co thong so ky thuat nao.</td>
+                          <td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-500">Chưa có thông số kỹ thuật nào.</td>
                         </tr>
                       )}
                       {editingProduct.specs.map((spec, index) => (
@@ -638,7 +638,7 @@ export function ProductManagement() {
                           <td className="px-5 py-3">
                             <input
                               type="text"
-                              placeholder="Vi du: Chat lieu"
+                              placeholder="Ví dụ: Chất liệu"
                               className="w-full rounded-md border border-transparent bg-transparent px-3 py-2 font-semibold outline-none transition focus:border-amber-300 focus:bg-white"
                               value={spec.key}
                               onChange={event => updateSpec(index, 'key', event.target.value)}
@@ -647,7 +647,7 @@ export function ProductManagement() {
                           <td className="px-5 py-3">
                             <input
                               type="text"
-                              placeholder="Vi du: Go Mahogany"
+                              placeholder="Ví dụ: Gỗ Mahogany"
                               className="w-full rounded-md border border-transparent bg-transparent px-3 py-2 outline-none transition focus:border-amber-300 focus:bg-white"
                               value={spec.value}
                               onChange={event => updateSpec(index, 'value', event.target.value)}
@@ -655,9 +655,9 @@ export function ProductManagement() {
                           </td>
                           <td className="px-5 py-3">
                             <div className="flex items-center justify-center gap-1">
-                              <IconButton icon="arrow_upward" label="Len" onClick={() => moveSpec(index, 'up')} disabled={index === 0} />
-                              <IconButton icon="arrow_downward" label="Xuong" onClick={() => moveSpec(index, 'down')} disabled={index === editingProduct.specs.length - 1} />
-                              <IconButton icon="delete" label="Xoa" onClick={() => removeSpec(index)} danger />
+                              <IconButton icon="arrow_upward" label="Lên" onClick={() => moveSpec(index, 'up')} disabled={index === 0} />
+                              <IconButton icon="arrow_downward" label="Xuống" onClick={() => moveSpec(index, 'down')} disabled={index === editingProduct.specs.length - 1} />
+                              <IconButton icon="delete" label="Xóa" onClick={() => removeSpec(index)} danger />
                             </div>
                           </td>
                         </tr>
@@ -670,14 +670,14 @@ export function ProductManagement() {
 
             <div className="flex flex-col-reverse gap-3 rounded-b-2xl border-t border-slate-100 bg-slate-50/60 p-6 sm:flex-row sm:justify-end">
               <button onClick={() => setEditingProduct(null)} className="rounded-md px-6 py-3 text-sm font-bold text-slate-500 transition hover:bg-white hover:text-slate-950">
-                Huy bo
+                Hủy bỏ
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving || !editingProduct.name.trim() || editingProduct.price < 0}
                 className="rounded-md bg-slate-950 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isSaving ? 'Dang luu...' : editingProduct.isNew ? 'Them san pham' : 'Luu thay doi'}
+                {isSaving ? 'Đang lưu...' : editingProduct.isNew ? 'Thêm sản phẩm' : 'Lưu thay đổi'}
               </button>
             </div>
           </div>

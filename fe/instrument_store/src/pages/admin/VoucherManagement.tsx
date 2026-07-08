@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   createAdminCoupon,
   deleteAdminCoupon,
@@ -125,7 +125,7 @@ export function VoucherManagement() {
       })
       .catch((err) => {
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Khong the tai danh sach voucher');
+        setError(err instanceof Error ? err.message : 'Không thể tải danh sách voucher');
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -188,7 +188,7 @@ export function VoucherManagement() {
       });
       setEditing(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Khong the luu voucher');
+      setError(err instanceof Error ? err.message : 'Không thể lưu voucher');
     } finally {
       setSaving(false);
     }
@@ -205,7 +205,7 @@ export function VoucherManagement() {
       await deleteAdminCoupon(coupon.id);
       setCoupons((prev) => prev.filter((item) => item.id !== coupon.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Khong the xoa voucher');
+      setError(err instanceof Error ? err.message : 'Không thể xóa voucher');
     } finally {
       setSaving(false);
     }
@@ -216,7 +216,7 @@ export function VoucherManagement() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-amber-700">Admin</p>
-          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quan ly voucher</h2>
+          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quản lý voucher</h2>
           <p className="mt-2 text-sm text-slate-500">Tạo, cập nhật và theo dõi số lượng voucher bán ra.</p>
         </div>
         <div className="grid grid-cols-3 gap-3 sm:w-fit sm:grid-cols-3">
@@ -469,7 +469,7 @@ export function VoucherManagement() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="space-y-2">
       <span className="block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{label}</span>

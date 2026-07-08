@@ -43,13 +43,13 @@ async function readErrorMessage(res: Response) {
     // fall through
   }
 
-  return text || 'Loi server';
+  return text || 'Lỗi server';
 }
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
   if (!token) {
-    throw new Error('Vui long dang nhap');
+    throw new Error('Vui lòng đăng nhập');
   }
 
   return {

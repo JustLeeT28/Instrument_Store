@@ -39,13 +39,13 @@ async function readErrorMessage(res: Response) {
     // Fall back to raw text.
   }
 
-  return text || 'Khong the xu ly yeu cau';
+  return text || 'Không thể xử lý yêu cầu';
 }
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
   if (!token) {
-    throw new Error('Vui long dang nhap');
+    throw new Error('Vui lòng đăng nhập');
   }
 
   return {

@@ -8,10 +8,10 @@ import {
 } from '../../services/adminUsers';
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
-  { value: 'CUSTOMER', label: 'Khach hang' },
-  { value: 'STUDENT', label: 'Hoc sinh / sinh vien' },
-  { value: 'TEACHER', label: 'Giao vien' },
-  { value: 'ADMIN', label: 'Quan tri vien' },
+  { value: 'CUSTOMER', label: 'Khách hàng' },
+  { value: 'STUDENT', label: 'Học sinh / sinh viên' },
+  { value: 'TEACHER', label: 'Giáo viên' },
+  { value: 'ADMIN', label: 'Quản trị viên' },
 ];
 
 const ROLE_BADGE: Record<UserRole, string> = {
@@ -23,7 +23,7 @@ const ROLE_BADGE: Record<UserRole, string> = {
 
 function formatDate(value: string) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Khong ro';
+  if (Number.isNaN(date.getTime())) return 'Không rõ';
 
   return new Intl.DateTimeFormat('vi-VN', {
     day: '2-digit',
@@ -59,7 +59,7 @@ export function UserManagement() {
       })
       .catch(err => {
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Khong the tai danh sach tai khoan');
+        setError(err instanceof Error ? err.message : 'Không thể tải danh sách tài khoản');
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -112,7 +112,7 @@ export function UserManagement() {
       const updated = await updateAdminUserRole(user.id, role);
       setUsers(prev => prev.map(item => (item.id === user.id ? updated : item)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Khong the cap nhat vai tro');
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật vai trò');
     } finally {
       setSavingId(null);
     }
@@ -126,7 +126,7 @@ export function UserManagement() {
       const updated = await updateAdminUserStatus(user.id, !user.status);
       setUsers(prev => prev.map(item => (item.id === user.id ? updated : item)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Khong the cap nhat trang thai');
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật trạng thái');
     } finally {
       setSavingId(null);
     }
@@ -137,13 +137,13 @@ export function UserManagement() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-amber-700">Admin</p>
-          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quan ly tai khoan</h2>
-          <p className="mt-2 text-sm text-slate-500">Phan quyen va khoa/mo khoa tai khoan nguoi dung.</p>
+          <h2 className="mt-1 text-3xl font-bold text-slate-950">Quản lý tài khoản</h2>
+          <p className="mt-2 text-sm text-slate-500">Phân quyền và khóa/mở khóa tài khoản người dùng.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatBox label="Tong" value={stats.total} />
-          <StatBox label="Hoat dong" value={stats.active} />
-          <StatBox label="Da khoa" value={stats.locked} />
+          <StatBox label="Tổng" value={stats.total} />
+          <StatBox label="Hoạt động" value={stats.active} />
+          <StatBox label="Đã khóa" value={stats.locked} />
           <StatBox label="Admin" value={stats.admin} />
         </div>
       </div>
@@ -155,7 +155,7 @@ export function UserManagement() {
             <input
               value={query}
               onChange={event => setQuery(event.target.value)}
-              placeholder="Tim theo ten, email hoac so dien thoai"
+              placeholder="Tìm theo tên, email hoặc số điện thoại"
               className="w-full rounded-md border border-slate-200 py-3 pl-10 pr-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
             />
           </div>
@@ -164,7 +164,7 @@ export function UserManagement() {
             onChange={event => setRoleFilter(event.target.value as 'ALL' | UserRole)}
             className="rounded-md border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
           >
-            <option value="ALL">Tat ca vai tro</option>
+            <option value="ALL">Tất cả vai trò</option>
             {ROLE_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
@@ -174,9 +174,9 @@ export function UserManagement() {
             onChange={event => setStatusFilter(event.target.value as 'ALL' | 'ACTIVE' | 'LOCKED')}
             className="rounded-md border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
           >
-            <option value="ALL">Tat ca trang thai</option>
-            <option value="ACTIVE">Dang hoat dong</option>
-            <option value="LOCKED">Da khoa</option>
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ACTIVE">Đang hoạt động</option>
+            <option value="LOCKED">Đã khóa</option>
           </select>
         </div>
 
@@ -192,23 +192,23 @@ export function UserManagement() {
           <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-widest text-slate-500">
               <tr>
-                <th className="px-5 py-4 font-bold">Tai khoan</th>
-                <th className="px-5 py-4 font-bold">Vai tro</th>
-                <th className="px-5 py-4 font-bold">Trang thai</th>
-                <th className="px-5 py-4 font-bold">Ngay tao</th>
-                <th className="px-5 py-4 text-right font-bold">Thao tac</th>
+                <th className="px-5 py-4 font-bold">Tài khoản</th>
+                <th className="px-5 py-4 font-bold">Vai trò</th>
+                <th className="px-5 py-4 font-bold">Trạng thái</th>
+                <th className="px-5 py-4 font-bold">Ngày tạo</th>
+                <th className="px-5 py-4 text-right font-bold">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500">Dang tai danh sach tai khoan...</td>
+                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500">Đang tải danh sách tài khoản...</td>
                 </tr>
               )}
 
               {!loading && filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500">Khong co tai khoan phu hop.</td>
+                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500">Không có tài khoản phù hợp.</td>
                 </tr>
               )}
 
@@ -223,9 +223,9 @@ export function UserManagement() {
                           {(user.fullName?.trim() || user.email).slice(0, 1)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-950">{user.fullName?.trim() || 'Chua cap nhat ten'}</p>
+                          <p className="truncate font-semibold text-slate-950">{user.fullName?.trim() || 'Chưa cập nhật tên'}</p>
                           <p className="truncate text-xs text-slate-500">{user.email}</p>
-                          <p className="truncate text-xs text-slate-400">{user.phone || 'Chua co so dien thoai'}</p>
+                          <p className="truncate text-xs text-slate-400">{user.phone || 'Chưa có số điện thoại'}</p>
                         </div>
                       </div>
                     </td>
@@ -249,7 +249,7 @@ export function UserManagement() {
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${user.status ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                         <span className="h-2 w-2 rounded-full bg-current" />
-                        {user.status ? 'Dang hoat dong' : 'Da khoa'}
+                        {user.status ? 'Đang hoạt động' : 'Đã khóa'}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-slate-500">{formatDate(user.createdAt)}</td>
@@ -264,7 +264,7 @@ export function UserManagement() {
                         }`}
                       >
                         <span className="material-symbols-outlined text-[18px]">{user.status ? 'lock' : 'lock_open'}</span>
-                        {isSaving ? 'Dang luu...' : user.status ? 'Khoa' : 'Mo khoa'}
+                        {isSaving ? 'Đang lưu...' : user.status ? 'Khóa' : 'Mở khóa'}
                       </button>
                     </td>
                   </tr>

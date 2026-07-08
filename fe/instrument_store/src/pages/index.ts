@@ -7,6 +7,7 @@ export { FavoritePage } from './FavoritePage';
 export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
 export { AdminDashboard } from './AdminDashboard';
+export { RevenueDashboard } from './admin/RevenueDashboard';
 export { ProductManagement } from './admin/ProductManagement';
 export { UserManagement } from './admin/UserManagement';
 export { VoucherManagement } from './admin/VoucherManagement';
