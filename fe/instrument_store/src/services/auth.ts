@@ -140,6 +140,12 @@ export function isAuthenticated() {
   return true;
 }
 
+export async function checkEmail(email: string): Promise<{ exists: boolean }> {
+  const res = await fetch(`${API_BASE}/auth/check-email?email=${encodeURIComponent(email)}`);
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
 export function logout() {
   localStorage.removeItem('token');
   window.dispatchEvent(new Event('auth-change'));

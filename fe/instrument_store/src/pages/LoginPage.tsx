@@ -1,19 +1,126 @@
 import { Link, useNavigate } from 'react-router-dom';
-import type { FormEvent } from 'react';
-import { useState } from 'react';
+import type { FormEvent, ChangeEvent } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { login } from '../services/auth';
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const MIN_PASSWORD_LENGTH = 6;
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Validation errors
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Track touched fields
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Debounce ref for async email check
+  const emailCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+
+  // Sync validation functions
+  const validateEmailSync = useCallback((value: string): string | null => {
+    if (!value.trim()) return 'Email không được để trống';
+    if (!EMAIL_REGEX.test(value)) return 'Email không đúng định dạng';
+    return null;
+  }, []);
+
+  const validatePasswordSync = useCallback((value: string): string | null => {
+    if (!value) return 'Mật khẩu không được để trống';
+    if (value.length < MIN_PASSWORD_LENGTH) return `Mật khẩu phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự`;
+    return null;
+  }, []);
+
+  // Handle email change with sync + async validation
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+
+    // Clear error when user starts typing
+    if (error) setError(null);
+
+    // Sync validation
+    const syncError = validateEmailSync(value);
+    setEmailError(syncError);
+
+    // Cancel previous debounced check
+    if (emailCheckTimerRef.current) {
+      clearTimeout(emailCheckTimerRef.current);
+    }
+    setIsCheckingEmail(false);
+
+    // Only async check when sync valid & has value
+    if (!syncError && value.trim()) {
+      setIsCheckingEmail(true);
+      emailCheckTimerRef.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/auth/check-email?email=${encodeURIComponent(value.trim())}`);
+          const data = await res.json();
+          if (data.exists) {
+            setEmailError('Email đã được đăng ký');
+          }
+        } catch {
+          // Silently ignore network errors for email check
+        } finally {
+          setIsCheckingEmail(false);
+        }
+      }, 500);
+    }
+  };
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (emailCheckTimerRef.current) {
+        clearTimeout(emailCheckTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (error) setError(null);
+    if (touched.password) {
+      setPasswordError(validatePasswordSync(value));
+    }
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    // Validate on blur
+    if (field === 'email') {
+      setEmailError(validateEmailSync(email));
+    }
+    if (field === 'password') {
+      setPasswordError(validatePasswordSync(password));
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+
+    // Mark all fields as touched
+    setTouched({ email: true, password: true });
+
+    // Validate all fields
+    const emailErr = validateEmailSync(email);
+    const passwordErr = validatePasswordSync(password);
+    setEmailError(emailErr);
+    setPasswordError(passwordErr);
+
+    if (emailErr || passwordErr) return;
+
     try {
-      const resp = await login({ email, password });
+      setIsSubmitting(true);
+      const resp = await login({ email: email.trim(), password });
       if (resp?.token) {
         localStorage.setItem('token', resp.token);
         window.dispatchEvent(new Event('auth-change'));
@@ -23,6 +130,8 @@ export const LoginPage = () => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi khi đăng nhập');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -65,18 +174,38 @@ export const LoginPage = () => {
               </p>
             </header>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               <div>
                 <label className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                   Email
                 </label>
-                <input
-                  className="mt-3 w-full border-0 border-b-2 border-slate-200 bg-transparent px-1 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-600 focus:ring-0"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                />
+                <div className="relative mt-3">
+                  <input
+                    className={`w-full border-0 border-b-2 bg-transparent px-1 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 ${
+                      touched.email && emailError
+                        ? 'border-red-400 focus:border-red-600'
+                        : 'border-slate-200 focus:border-amber-600'
+                    }`}
+                    type="email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    onBlur={() => handleBlur('email')}
+                    placeholder="name@example.com"
+                    disabled={isSubmitting}
+                    autoComplete="email"
+                  />
+                  {isCheckingEmail && (
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                      <svg className="h-4 w-4 animate-spin text-slate-400" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                {touched.email && emailError && (
+                  <p className="mt-1.5 text-xs text-red-600">{emailError}</p>
+                )}
               </div>
 
               <div>
@@ -89,21 +218,47 @@ export const LoginPage = () => {
                   </button>
                 </div>
                 <input
-                  className="mt-3 w-full border-0 border-b-2 border-slate-200 bg-transparent px-1 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-600 focus:ring-0"
+                  className={`mt-3 w-full border-0 border-b-2 bg-transparent px-1 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 ${
+                    touched.password && passwordError
+                      ? 'border-red-400 focus:border-red-600'
+                      : 'border-slate-200 focus:border-amber-600'
+                  }`}
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
+                  onBlur={() => handleBlur('password')}
                   placeholder="••••••••"
+                  disabled={isSubmitting}
+                  autoComplete="current-password"
                 />
+                {touched.password && passwordError && (
+                  <p className="mt-1.5 text-xs text-red-600">{passwordError}</p>
+                )}
               </div>
 
               <button
-                className="w-full rounded-none bg-slate-900 py-4 text-sm font-semibold uppercase tracking-[0.35em] text-white transition-colors hover:bg-amber-700"
+                className="flex w-full items-center justify-center gap-3 rounded-none bg-slate-900 py-4 text-sm font-semibold uppercase tracking-[0.35em] text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
+                disabled={isSubmitting}
               >
-                Đăng nhập
+                {isSubmitting ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Đang đăng nhập...
+                  </>
+                ) : (
+                  'Đăng nhập'
+                )}
               </button>
-              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+              {error && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
             </form>
 
             <div className="my-10 flex items-center gap-4 text-xs text-slate-400">
@@ -113,11 +268,17 @@ export const LoginPage = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex items-center justify-center gap-2 border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-amber-300 hover:text-amber-700">
+              <button
+                className="flex items-center justify-center gap-2 border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-amber-300 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isSubmitting}
+              >
                 <span className="material-symbols-outlined text-base">google</span>
                 Google
               </button>
-              <button className="flex items-center justify-center gap-2 border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-amber-300 hover:text-amber-700">
+              <button
+                className="flex items-center justify-center gap-2 border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-amber-300 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isSubmitting}
+              >
                 <span className="material-symbols-outlined text-base">ios</span>
                 Apple
               </button>

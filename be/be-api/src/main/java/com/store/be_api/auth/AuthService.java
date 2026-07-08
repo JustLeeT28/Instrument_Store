@@ -2,6 +2,7 @@ package com.store.be_api.auth;
 
 import com.store.be_api.auth.dto.AuthResponse;
 import com.store.be_api.auth.dto.AddressResponse;
+import com.store.be_api.auth.dto.CheckEmailResponse;
 import com.store.be_api.auth.dto.LoginRequest;
 import com.store.be_api.auth.dto.RegisterRequest;
 import com.store.be_api.auth.dto.UserResponse;
@@ -42,6 +43,14 @@ public class AuthService {
                 .token(token)
                 .user(UserResponse.fromUser(savedUser, null))
                 .build();
+    }
+
+    public CheckEmailResponse checkEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return new CheckEmailResponse(false);
+        }
+        boolean exists = userRepository.existsByEmail(email.trim().toLowerCase());
+        return new CheckEmailResponse(exists);
     }
 
     public AuthResponse login(LoginRequest request) {
