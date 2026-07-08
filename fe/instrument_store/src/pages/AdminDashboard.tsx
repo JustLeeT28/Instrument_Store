@@ -39,6 +39,7 @@ export function AdminDashboard() {
           <NavLink to="/admin/products" className={navClass}>Quản lý sản phẩm</NavLink>
           <NavLink to="/admin/categories" className={navClass}>Quản lý danh mục</NavLink>
           <NavLink to="/admin/vouchers" className={navClass}>Quản lý voucher</NavLink>
+          <NavLink to="/admin/orders" className={navClass}>Quản lý đơn hàng</NavLink>
           <NavLink to="/" className="block rounded p-2 hover:bg-gray-50">Quay về trang chủ</NavLink>
           <button onClick={handleLogout} className="w-full rounded p-2 text-left hover:bg-gray-50">Đăng xuất</button>
         </nav>
