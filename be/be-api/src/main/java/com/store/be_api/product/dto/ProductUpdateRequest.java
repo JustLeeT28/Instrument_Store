@@ -18,6 +18,9 @@ public class ProductUpdateRequest {
     private String description;
     private Double price;
     private Integer stockQty;
+    private UUID brandId;
+    private String brandName;
+    private UUID categoryId;
     private List<ProductImagePayload> images;
     private List<Map<String, String>> specs;
 

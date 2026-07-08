@@ -28,6 +28,9 @@ export type ProductUpdatePayload = {
   description?: string;
   price?: number;
   stockQty?: number;
+  brandId?: string;
+  brandName?: string;
+  categoryId?: string;
   images?: ProductImagePayload[];
   specs?: Array<Record<string, string>>;
 };

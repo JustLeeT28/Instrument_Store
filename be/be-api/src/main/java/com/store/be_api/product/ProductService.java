@@ -2,6 +2,10 @@ package com.store.be_api.product;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.store.be_api.brand.Brand;
+import com.store.be_api.brand.BrandRepository;
+import com.store.be_api.category.Category;
+import com.store.be_api.category.CategoryRepository;
 import com.store.be_api.product.dto.ProductDto;
 import com.store.be_api.product.dto.ProductUpdateRequest;
 import java.math.BigDecimal;
@@ -24,6 +28,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class ProductService {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final BrandRepository brandRepository;
+    private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper;
     private final ReviewService reviewService;
 
@@ -86,6 +92,8 @@ public class ProductService {
                 .description(request.getDescription())
                 .basePrice(BigDecimal.valueOf(request.getPrice()))
                 .stockQty(request.getStockQty() == null ? 0 : request.getStockQty())
+                .brand(resolveBrand(request))
+                .category(resolveCategory(request.getCategoryId()))
                 .build();
 
         if (request.getSpecs() != null) {
@@ -112,6 +120,8 @@ public class ProductService {
         if (request.getDescription() != null) product.setDescription(request.getDescription());
         if (request.getPrice() != null) product.setBasePrice(BigDecimal.valueOf(request.getPrice()));
         if (request.getStockQty() != null) product.setStockQty(request.getStockQty());
+        if (request.getBrandId() != null || hasText(request.getBrandName())) product.setBrand(resolveBrand(request));
+        if (request.getCategoryId() != null) product.setCategory(resolveCategory(request.getCategoryId()));
 
         if (request.getSpecs() != null) {
             try {
@@ -162,6 +172,50 @@ public class ProductService {
         }
 
         return candidate;
+    }
+
+    private Brand resolveBrand(ProductUpdateRequest request) {
+        if (hasText(request.getBrandName())) {
+            String name = request.getBrandName().trim();
+            return brandRepository.findByNameIgnoreCase(name)
+                    .orElseGet(() -> brandRepository.save(Brand.builder()
+                            .name(name)
+                            .slug(ensureUniqueBrandSlug(name))
+                            .build()));
+        }
+
+        if (request.getBrandId() == null) {
+            return null;
+        }
+
+        return brandRepository.findById(request.getBrandId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Brand not found"));
+    }
+
+    private Category resolveCategory(UUID categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
+    }
+
+    private String ensureUniqueBrandSlug(String value) {
+        String base = toSlug(value);
+        String candidate = base;
+        int suffix = 2;
+
+        while (brandRepository.findBySlug(candidate).isPresent()) {
+            candidate = base + "-" + suffix;
+            suffix += 1;
+        }
+
+        return candidate;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String toSlug(String value) {

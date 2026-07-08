@@ -32,6 +32,8 @@ public class SecurityConfig {
                 .requestMatchers("/admin/revenue", "/admin/revenue/**").hasRole("ADMIN")
                 .requestMatchers("/users/admin", "/users/admin/**").hasRole("ADMIN")
                 .requestMatchers("/coupons/admin", "/coupons/admin/**").hasRole("ADMIN")
+                .requestMatchers("/brands/admin", "/brands/admin/**").hasRole("ADMIN")
+                .requestMatchers("/categories/admin", "/categories/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/products").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/brands", "/brands/**", "/categories", "/categories/**", "/api/products", "/api/products/**", "/products", "/products/**").permitAll()

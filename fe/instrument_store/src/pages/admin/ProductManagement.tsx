@@ -5,6 +5,10 @@ import {
   updateProduct,
   type ProductItem as ServiceProductItem,
 } from '../../services/products';
+import { fetchBrands, type Brand } from '../../services/brands';
+import { fetchCategories, type Category } from '../../services/categories';
+
+const OTHER_BRAND_VALUE = '__other_brand__';
 
 export interface AdminProductItem {
   id: string;
@@ -37,6 +41,9 @@ interface EditProductData extends Omit<AdminProductItem, 'images' | 'specs'> {
   id: string;
   slug?: string;
   description?: string | null;
+  brandId?: string;
+  brandName?: string;
+  categoryId?: string;
   images: ProductImage[];
   specs: SpecItem[];
   isNew?: boolean;
@@ -46,6 +53,9 @@ const emptyProduct: EditProductData = {
   id: 'new',
   name: '',
   slug: '',
+  brandId: '',
+  brandName: '',
+  categoryId: '',
   description: '',
   price: 0,
   stockQty: 0,
@@ -63,7 +73,8 @@ function formatCurrency(value: number) {
   }).format(value || 0);
 }
 
-function toEditProduct(product: AdminProductItem): EditProductData {
+function toEditProduct(product: AdminProductItem, brands: Brand[], categories: Category[]): EditProductData {
+  const matchedBrand = brands.find(brand => brand.name === product.brand);
   const normalizedImages: ProductImage[] = (product.images ?? []).map(image => ({
     url: image,
     isPrimary: image === product.image,
@@ -83,6 +94,9 @@ function toEditProduct(product: AdminProductItem): EditProductData {
   return {
     ...product,
     slug: product.slug ?? '',
+    brandId: matchedBrand?.id ?? (product.brand ? OTHER_BRAND_VALUE : ''),
+    brandName: matchedBrand ? '' : product.brand ?? '',
+    categoryId: categories.find(category => category.name === product.category)?.id ?? '',
     description: product.description ?? '',
     images: normalizedImages,
     specs: normalizedSpecs,
@@ -93,6 +107,8 @@ export function ProductManagement() {
   const [query, setQuery] = useState('');
   const [stockFilter, setStockFilter] = useState<'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK'>('ALL');
   const [products, setProducts] = useState<AdminProductItem[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<EditProductData | null>(null);
@@ -105,10 +121,12 @@ export function ProductManagement() {
     let mounted = true;
 
     setLoading(true);
-    fetchProducts()
-      .then(data => {
+    Promise.all([fetchProducts(), fetchBrands(), fetchCategories()])
+      .then(([productData, brandData, categoryData]) => {
         if (!mounted) return;
-        setProducts(data as unknown as AdminProductItem[]);
+        setProducts(productData as unknown as AdminProductItem[]);
+        setBrands(brandData);
+        setCategories(categoryData);
         setError(null);
       })
       .catch(err => {
@@ -169,7 +187,7 @@ export function ProductManagement() {
   const handleEdit = (product: AdminProductItem) => {
     setUploadImageError(null);
     setNewImgLink('');
-    setEditingProduct(toEditProduct(product));
+    setEditingProduct(toEditProduct(product, brands, categories));
   };
 
   const handleAddImage = () => {
@@ -300,6 +318,9 @@ export function ProductManagement() {
         description: editingProduct.description ?? '',
         price: editingProduct.price,
         stockQty: editingProduct.stockQty ?? 0,
+        brandId: editingProduct.brandId && editingProduct.brandId !== OTHER_BRAND_VALUE ? editingProduct.brandId : undefined,
+        brandName: editingProduct.brandId === OTHER_BRAND_VALUE ? editingProduct.brandName?.trim() || undefined : undefined,
+        categoryId: editingProduct.categoryId || undefined,
         images: editingProduct.images.map(({ url, isPrimary }) => ({ imageUrl: url, isPrimary })),
         specs: editingProduct.specs
           .filter(spec => spec.key.trim())
@@ -526,6 +547,48 @@ export function ProductManagement() {
                       onChange={event => setEditingProduct({ ...editingProduct, slug: event.target.value })}
                     />
                   </FieldLabel>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <FieldLabel label="Thương hiệu">
+                      <select
+                        className="field-input"
+                        value={editingProduct.brandId || ''}
+                        onChange={event => setEditingProduct({
+                          ...editingProduct,
+                          brandId: event.target.value,
+                          brandName: event.target.value === OTHER_BRAND_VALUE ? editingProduct.brandName ?? '' : '',
+                        })}
+                      >
+                        <option value="">Chưa chọn thương hiệu</option>
+                        {brands.map(brand => (
+                          <option key={brand.id} value={brand.id}>{brand.name}</option>
+                        ))}
+                        <option value={OTHER_BRAND_VALUE}>Thương hiệu khác</option>
+                      </select>
+                    </FieldLabel>
+                    <FieldLabel label="Danh mục">
+                      <select
+                        className="field-input"
+                        value={editingProduct.categoryId || ''}
+                        onChange={event => setEditingProduct({ ...editingProduct, categoryId: event.target.value })}
+                      >
+                        <option value="">Chưa chọn danh mục</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                      </select>
+                    </FieldLabel>
+                  </div>
+                  {editingProduct.brandId === OTHER_BRAND_VALUE && (
+                    <FieldLabel label="Tên thương hiệu khác">
+                      <input
+                        type="text"
+                        className="field-input"
+                        value={editingProduct.brandName ?? ''}
+                        onChange={event => setEditingProduct({ ...editingProduct, brandName: event.target.value })}
+                        placeholder="Ví dụ: Yamaha, Fender, Taylor..."
+                      />
+                    </FieldLabel>
+                  )}
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <FieldLabel label="Giá niêm yết">
                       <input

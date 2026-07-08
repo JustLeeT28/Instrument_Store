@@ -39,6 +39,42 @@ function cacheCategories(categories: Category[]) {
   }
 }
 
+function clearCategoryCache() {
+  try {
+    localStorage.removeItem(CATEGORY_CACHE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+async function readErrorMessage(res: Response) {
+  const text = await res.text();
+
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed?.message === 'string' && parsed.message.trim()) {
+      return parsed.message;
+    }
+  } catch {
+    // Fall back to raw text.
+  }
+
+  return text || 'Không thể xử lý yêu cầu';
+}
+
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Vui lòng đăng nhập');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+}
+
 export async function fetchCategories(): Promise<Category[]> {
   try {
     const res = await fetch(`${API_BASE}/categories`, { cache: 'no-store' });
@@ -58,4 +94,32 @@ export async function fetchCategories(): Promise<Category[]> {
 
     throw error;
   }
+}
+
+export async function createAdminCategory(name: string, position?: number): Promise<Category> {
+  const res = await fetch(`${API_BASE}/categories/admin`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name, position }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+
+  clearCategoryCache();
+  return res.json();
+}
+
+export async function deleteAdminCategory(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/categories/admin/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok && res.status !== 204) {
+    throw new Error(await readErrorMessage(res));
+  }
+
+  clearCategoryCache();
 }
