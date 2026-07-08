@@ -14,3 +14,4 @@ export { VoucherManagement } from './admin/VoucherManagement';
 export { CategoryManagement } from './admin/CategoryManagement';
 export { OrderManagement } from './admin/OrderManagement';
 export { OrderHistoryPage } from './OrderHistoryPage';
+export { OrderDetailPage } from './OrderDetailPage';

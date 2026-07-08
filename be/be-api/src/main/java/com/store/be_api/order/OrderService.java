@@ -33,6 +33,7 @@ import com.store.be_api.order.dto.OrderItemResponse;
 import com.store.be_api.order.dto.OrderListResponse;
 import com.store.be_api.order.dto.OrderResponse;
 import com.store.be_api.product.Product;
+import com.store.be_api.product.ProductImage;
 import com.store.be_api.product.ProductRepository;
 import com.store.be_api.user.User;
 import com.store.be_api.user.UserRepository;
@@ -217,6 +218,20 @@ public class OrderService {
         List<OrderItemResponse> itemResponses = new ArrayList<>();
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
+                String productImage = null;
+                if (item.getVariantId() != null) {
+                    Product product = productRepository.findById(item.getVariantId()).orElse(null);
+                    if (product != null) {
+                        List<ProductImage> images = product.getImages();
+                        if (images != null && !images.isEmpty()) {
+                            ProductImage primary = images.stream()
+                                    .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                                    .findFirst()
+                                    .orElse(images.get(0));
+                            productImage = primary.getImageUrl();
+                        }
+                    }
+                }
                 itemResponses.add(OrderItemResponse.builder()
                         .id(item.getId().toString())
                         .productName(item.getProductName())
@@ -224,7 +239,7 @@ public class OrderService {
                         .unitPrice(item.getUnitPrice().doubleValue())
                         .quantity(item.getQuantity())
                         .lineTotal(item.getLineTotal().doubleValue())
-                        .image(null)
+                        .image(productImage)
                         .build());
             }
         }

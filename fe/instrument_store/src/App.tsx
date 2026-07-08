@@ -10,6 +10,7 @@ import {
   LoginPage,
   RegisterPage,
   OrderHistoryPage,
+  OrderDetailPage,
 } from './pages';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminDashboard, CategoryManagement, OrderManagement, ProductManagement, RevenueDashboard, UserManagement, VoucherManagement } from './pages';
@@ -31,6 +32,7 @@ function AppContent() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/favorite" element={<FavoritePage />} />
           <Route path="/orders" element={<OrderHistoryPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
 
           <Route
             path="/admin/*"

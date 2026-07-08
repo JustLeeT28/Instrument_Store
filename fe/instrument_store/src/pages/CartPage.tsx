@@ -230,7 +230,7 @@ export const CartPage = () => {
             {loading ? (
               <div className="rounded-2xl border border-white/70 bg-white/90 p-8 shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Đang tải giỏ hàng</p>
-                <p className="mt-2 text-slate-600">Đợi mình lấy dữ liệu từ backend...</p>
+                <p className="mt-2 text-slate-600">Đang tải đơn hàng...</p>
               </div>
             ) : cartItems.length > 0 ? (
               <>
@@ -522,7 +522,7 @@ export const CartPage = () => {
               ))}
             </div>
           ) : (
-            <p className="text-center text-sm text-slate-500">Chưa có sản phẩm gợi ý từ backend.</p>
+            <p className="text-center text-sm text-slate-500">Chưa có sản phẩm gợi ý.</p>
           )}
         </section>
       </main>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchOrders, type Order, type OrderStatus } from '../services/orders';
 import { isAuthenticated } from '../services/auth';
 
@@ -50,9 +50,17 @@ const FILTER_TABS = [
   { key: 'cancelled', label: 'Đã hủy' },
 ] as const;
 
-const fallbackImage = 'https://via.placeholder.com/200x200?text=No+Image';
+const fallbackImage =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">' +
+    '<rect width="200" height="200" fill="#e2e8f0"/>' +
+    '<text x="100" y="100" text-anchor="middle" dominant-baseline="central" font-family="Arial,sans-serif" font-size="16" fill="#94a3b8">No Image</text>' +
+    '</svg>'
+  );
 
 export const OrderHistoryPage = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -295,7 +303,10 @@ export const OrderHistoryPage = () => {
                     {/* Actions */}
                     <div className="md:w-64 flex flex-col justify-between items-stretch gap-4 md:border-l md:border-slate-200/60 md:pl-6">
                       <div className="space-y-3">
-                        <button className="w-full py-3.5 bg-slate-950 text-white rounded-lg text-sm font-bold uppercase tracking-[0.12em] hover:bg-slate-800 transition-all shadow-sm">
+                        <button
+                          onClick={() => navigate(`/orders/${order.id}`)}
+                          className="w-full py-3.5 bg-slate-950 text-white rounded-lg text-sm font-bold uppercase tracking-[0.12em] hover:bg-slate-800 transition-all shadow-sm"
+                        >
                           Xem chi tiết
                         </button>
                         {order.status === 'shipping' && (
