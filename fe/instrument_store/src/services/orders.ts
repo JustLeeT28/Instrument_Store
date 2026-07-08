@@ -1,6 +1,6 @@
 import { API_BASE } from './api';
 
-export type OrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
+export type OrderStatus = 'preparing' | 'shipping' | 'delivered' | 'cancelled';
 
 export type OrderItem = {
   id: string;

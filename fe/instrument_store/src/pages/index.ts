@@ -12,4 +12,5 @@ export { ProductManagement } from './admin/ProductManagement';
 export { UserManagement } from './admin/UserManagement';
 export { VoucherManagement } from './admin/VoucherManagement';
 export { CategoryManagement } from './admin/CategoryManagement';
+export { OrderManagement } from './admin/OrderManagement';
 export { OrderHistoryPage } from './OrderHistoryPage';

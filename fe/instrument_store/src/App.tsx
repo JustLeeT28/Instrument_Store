@@ -12,7 +12,7 @@ import {
   OrderHistoryPage,
 } from './pages';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminDashboard, CategoryManagement, ProductManagement, RevenueDashboard, UserManagement, VoucherManagement } from './pages';
+import { AdminDashboard, CategoryManagement, OrderManagement, ProductManagement, RevenueDashboard, UserManagement, VoucherManagement } from './pages';
 import './App.css';
 
 function AppContent() {
@@ -41,6 +41,7 @@ function AppContent() {
             }
           >
             <Route index element={<RevenueDashboard />} />
+            <Route path="orders" element={<OrderManagement />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="users" element={<UserManagement />} />

@@ -20,15 +20,10 @@ const formatDate = (dateStr: string) => {
 };
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; class: string; icon: string }> = {
-  pending: {
-    label: 'Chờ xác nhận',
+  preparing: {
+    label: 'Chuẩn bị hàng',
     class: 'bg-amber-50 text-amber-700 border-amber-100',
     icon: 'hourglass_empty',
-  },
-  confirmed: {
-    label: 'Đã xác nhận',
-    class: 'bg-blue-50 text-blue-700 border-blue-100',
-    icon: 'check_circle',
   },
   shipping: {
     label: 'Đang vận chuyển',
@@ -36,12 +31,12 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; class: string; icon: s
     icon: 'local_shipping',
   },
   delivered: {
-    label: 'Đã giao thành công',
+    label: 'Đã giao hàng',
     class: 'bg-green-50 text-green-700 border-green-100',
     icon: 'check_circle',
   },
   cancelled: {
-    label: 'Đã hủy',
+    label: 'Bị huỷ',
     class: 'bg-red-50 text-red-700 border-red-100',
     icon: 'cancel',
   },
@@ -49,8 +44,10 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; class: string; icon: s
 
 const FILTER_TABS = [
   { key: 'all', label: 'Tất cả đơn' },
-  { key: 'pending', label: 'Đang xử lý' },
+  { key: 'preparing', label: 'Chuẩn bị hàng' },
+  { key: 'shipping', label: 'Đang vận chuyển' },
   { key: 'delivered', label: 'Đã giao' },
+  { key: 'cancelled', label: 'Đã hủy' },
 ] as const;
 
 const fallbackImage = 'https://via.placeholder.com/200x200?text=No+Image';
