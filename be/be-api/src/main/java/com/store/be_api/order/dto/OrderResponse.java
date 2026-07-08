@@ -2,6 +2,8 @@ package com.store.be_api.order.dto;
 
 import java.util.List;
 
+import com.store.be_api.order.OrderStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +17,7 @@ public class OrderResponse {
     private String id;
     private String orderCode;
     private String couponCode;
-    private String status;
+    private OrderStatus status;
     private double subtotal;
     private double discountAmount;
     private double shippingFee;

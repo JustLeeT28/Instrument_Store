@@ -12,7 +12,9 @@ import com.store.be_api.user.User;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
     long countByUser(User user);
 
     List<Order> findByCreatedAtBetweenOrderByCreatedAtAsc(OffsetDateTime start, OffsetDateTime end);
+    long countByStatus(OrderStatus status);
 }

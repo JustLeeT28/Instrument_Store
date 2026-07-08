@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,9 @@ import com.store.be_api.cart.dto.CartItemResponse;
 import com.store.be_api.cart.dto.CartResponse;
 import com.store.be_api.coupon.Coupon;
 import com.store.be_api.coupon.CouponRepository;
+import com.store.be_api.order.dto.AdminOrderListResponse;
+import com.store.be_api.order.dto.AdminOrderResponse;
+import com.store.be_api.order.dto.AdminUpdateOrderStatusRequest;
 import com.store.be_api.order.dto.OrderItemResponse;
 import com.store.be_api.order.dto.OrderListResponse;
 import com.store.be_api.order.dto.OrderResponse;
@@ -84,7 +88,7 @@ public class OrderService {
                 .id(orderId)
                 .user(user)
                 .orderCode(orderCode)
-                .status("pending")
+            .status(OrderStatus.PREPARING)
                 .paymentMethod("COD")
                 .shippingFee(BigDecimal.ZERO)
                 .build();
@@ -172,6 +176,43 @@ public class OrderService {
         return toResponse(order);
     }
 
+    public AdminOrderListResponse getAdminOrders(int page, int size, OrderStatus status) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<Order> orderPage = status == null
+        ? orderRepository.findAll(pageRequest)
+            : orderRepository.findByStatus(status, pageRequest);
+
+    long total = status == null
+        ? orderRepository.count()
+        : orderRepository.countByStatus(status);
+
+    List<AdminOrderResponse> orders = orderPage.getContent().stream()
+        .map(this::toAdminResponse)
+        .toList();
+
+        AdminOrderListResponse response = new AdminOrderListResponse();
+        response.setOrders(orders);
+        response.setTotal(total);
+        response.setPage(page);
+        response.setSize(size);
+        return response;
+    }
+
+    @Transactional
+    public AdminOrderResponse updateAdminOrderStatus(UUID orderId, AdminUpdateOrderStatusRequest request) {
+        UUID lookupOrderId = Objects.requireNonNull(orderId, "orderId");
+        Order order = orderRepository.findById(lookupOrderId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+
+    if (request == null || request.getStatus() == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status is required");
+    }
+
+    order.setStatus(request.getStatus());
+    orderRepository.save(order);
+    return toAdminResponse(order);
+    }
+
     private OrderResponse toResponse(Order order) {
         List<OrderItemResponse> itemResponses = new ArrayList<>();
         if (order.getItems() != null) {
@@ -205,6 +246,26 @@ public class OrderService {
                 .createdAt(createdAt)
                 .items(itemResponses)
                 .build();
+    }
+
+    private AdminOrderResponse toAdminResponse(Order order) {
+        String createdAt = order.getCreatedAt() != null
+                ? order.getCreatedAt().format(DATE_FORMATTER)
+                : null;
+
+        AdminOrderResponse response = new AdminOrderResponse();
+        response.setId(order.getId().toString());
+        response.setOrderCode(order.getDisplayOrderCode());
+        response.setCustomerName(order.getUser() != null ? order.getUser().getFullName() : null);
+        response.setCustomerEmail(order.getUser() != null ? order.getUser().getEmail() : null);
+        response.setStatus(order.getStatus());
+        response.setSubtotal(order.getSubtotal().doubleValue());
+        response.setDiscountAmount(order.getDiscountAmount().doubleValue());
+        response.setShippingFee(order.getShippingFee().doubleValue());
+        response.setTotal(order.getTotal().doubleValue());
+        response.setPaymentMethod(order.getPaymentMethod());
+        response.setCreatedAt(createdAt);
+        return response;
     }
 
     private Coupon resolveCoupon(String couponCode, BigDecimal subtotal) {
