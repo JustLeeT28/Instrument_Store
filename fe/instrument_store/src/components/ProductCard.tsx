@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { addCartItem } from '../services/cart';
+import { CartNotification } from './CartNotification';
 
 export interface Product {
   id: string;
@@ -20,18 +21,21 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [addingToCart, setAddingToCart] = useState(false);
-  const [cartMessage, setCartMessage] = useState('');
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   const handleAddToCart = async () => {
     if (addingToCart) return;
 
     try {
       setAddingToCart(true);
-      setCartMessage('');
+      setNotificationMessage('');
       await addCartItem(product.id, 1);
-      setCartMessage('Đã thêm vào giỏ hàng');
+      setNotificationMessage('Đã thêm vào giỏ hàng');
+      setShowNotification(true);
     } catch (error) {
-      setCartMessage(error instanceof Error ? error.message : 'Không thêm được vào giỏ hàng');
+      setNotificationMessage(error instanceof Error ? error.message : 'Không thêm được vào giỏ hàng');
+      setShowNotification(true);
     } finally {
       setAddingToCart(false);
     }
@@ -81,7 +85,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
         {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
       </button>
-      {cartMessage && <p className="mt-2 text-xs text-slate-600">{cartMessage}</p>}
+      <CartNotification
+        message={notificationMessage}
+        visible={showNotification}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 };
